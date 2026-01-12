@@ -46,7 +46,7 @@
         const [parsedIssues, setParsedIssues] = React.useState([]);
         const [loading, setLoading] = React.useState(true);
         const [error, setError] = React.useState(null);
-        const [activeTab, setActiveTab] = React.useState("dashboard");
+        const [activeTab, setActiveTab] = React.useState("table");
 
         const fetchData = async () => {
           try {
@@ -230,6 +230,16 @@
               {/* Tabs */}
               <div className="flex space-x-4 border-b border-slate-200">
                 <button
+                    className={`pb-2 px-1 text-sm font-medium ${
+                        activeTab === "table"
+                            ? "border-b-2 border-blue-500 text-blue-600"
+                            : "text-slate-500 hover:text-slate-700"
+                    }`}
+                    onClick={() => setActiveTab("table")}
+                >
+                    All Issues
+                </button>
+                <button
                   className={`pb-2 px-1 text-sm font-medium ${
                     activeTab === "dashboard"
                       ? "border-b-2 border-blue-500 text-blue-600"
@@ -238,16 +248,6 @@
                   onClick={() => setActiveTab("dashboard")}
                 >
                   Dashboard
-                </button>
-                <button
-                  className={`pb-2 px-1 text-sm font-medium ${
-                    activeTab === "table"
-                      ? "border-b-2 border-blue-500 text-blue-600"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                  onClick={() => setActiveTab("table")}
-                >
-                  All Issues
                 </button>
               </div>
             </header>
@@ -264,10 +264,10 @@
               <div className="card border-dashed border-2 py-20 text-center text-slate-400">
                 No issues found in .beads directory.
               </div>
-            ) : activeTab === "dashboard" ? (
-               <DashboardView metrics={metrics} />
+            ) : activeTab === "table" ? (
+                <TableView issues={parsedIssues} />
             ) : (
-               <TableView issues={parsedIssues} />
+                <DashboardView metrics={metrics} />
             )}
           </div>
         );
