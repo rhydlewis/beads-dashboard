@@ -1,16 +1,23 @@
 {
   "name": "beads-dashboard",
   "version": "0.1.0",
-  "description": "",
+  "description": "A local, real-time lean metrics dashboard for Beads",
   "main": "index.js",
+  "bin": {
+    "beads-dashboard": "./bin/beads-dashboard.js"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["beads", "dashboard", "metrics", "lean", "kanban"],
+  "author": "Rhyd Lewis",
   "license": "ISC",
   "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/beads-dashboard.git"
+  },
   "dependencies": {
     "chokidar": "^5.0.0",
     "cors": "^2.8.5",

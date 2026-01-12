@@ -9,22 +9,46 @@ Beads Performance Dashboard is a local, real-time lean metrics dashboard for the
 ## Common Commands
 
 ### Running the application
+
+**Global installation (recommended for users):**
 ```bash
-# Start server (watches current directory for .beads folder)
+# Install globally
+npm install -g beads-dashboard
+
+# Run from any directory
+beads-dashboard
+
+# Run against a specific project
+beads-dashboard /path/to/project
+
+# Use custom port
+beads-dashboard --port=8080
+```
+
+**Local development:**
+```bash
+# Install dependencies
+npm install
+
+# Run locally
 npm start
 
-# Start server pointing to a different project
+# Run against a specific project
 npm start -- /path/to/project
 
-# Default port is 3000, access at http://localhost:3000
 # Use custom port
 npm start -- --port=8080
 ```
+
+Default port is 3000, access at http://localhost:3000
 
 ### Development
 ```bash
 # Install dependencies
 npm install
+
+# Link for local testing (makes beads-dashboard command available)
+npm link
 
 # No build step required - uses CDN-loaded React and Babel
 # No linting or testing configured yet

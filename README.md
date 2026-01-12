@@ -14,9 +14,32 @@ A local, real-time lean metrics dashboard for [Beads](https://github.com/steveye
 *   **Table View**: A detailed list of all active issues with sortable attributes.
 *   **Community Ready**: Designed to run against any Beads repository.
 
-## Installation
+## Quick Start (Global Install)
 
-You can install and run this tool directly from the source.
+Install globally via npm:
+
+```bash
+npm install -g beads-dashboard
+```
+
+Then run from any directory containing a `.beads` folder:
+
+```bash
+# Run in current directory
+beads-dashboard
+
+# Run against a specific project
+beads-dashboard /path/to/project
+
+# Use custom port
+beads-dashboard --port=8080
+```
+
+Then open your browser to **http://localhost:3000** (or your custom port).
+
+## Installation (Development)
+
+You can also install and run this tool directly from the source.
 
 ```bash
 # Clone the repository
@@ -42,8 +65,6 @@ You can point the dashboard to any other directory containing a `.beads` folder:
 ```bash
 npm start -- /path/to/your/other/project
 ```
-
-Then open your browser to **http://localhost:3000**.
 
 ## Development
 
