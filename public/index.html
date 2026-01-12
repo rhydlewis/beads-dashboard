@@ -181,6 +181,17 @@
             };
           }).sort((a, b) => a.closedDate - b.closedDate);
 
+          // Calculate Percentiles
+          const sortedCycles = leadTimeData.map(d => d.cycleTime).sort((a, b) => a - b);
+          const p50 = sortedCycles.length ? sortedCycles[Math.floor(sortedCycles.length * 0.5)] : 0;
+          const p85 = sortedCycles.length ? sortedCycles[Math.floor(sortedCycles.length * 0.85)] : 0;
+
+          // Color code Aging WIP
+          const coloredAgingWipData = agingWipData.map(d => ({
+            ...d,
+            color: d.age <= 7 ? "#10b981" : d.age <= 30 ? "#f59e0b" : "#ef4444"
+          }));
+
           return {
             avgAge: openIssues.length
               ? (totalAge / openIssues.length).toFixed(1)
@@ -191,8 +202,10 @@
             })),
             flowChartData,
             openCount: openIssues.length,
-            agingWipData,
+            agingWipData: coloredAgingWipData,
             leadTimeData,
+            cycleTimeP50: p50,
+            cycleTimeP85: p85,
           };
         }, [parsedIssues]);
 
@@ -326,6 +339,18 @@
                       />
                       <YAxis dataKey="cycleTime" name="Cycle Time" unit="d" fontSize={10} />
                       <Tooltip content={<CustomTooltip />} />
+                      <ReferenceLine 
+                        y={metrics.cycleTimeP50} 
+                        stroke="#10b981" 
+                        strokeDasharray="3 3" 
+                        label={{ position: 'insideTopRight', value: `50th: ${metrics.cycleTimeP50}d`, fill: '#10b981', fontSize: 10 }} 
+                      />
+                      <ReferenceLine 
+                        y={metrics.cycleTimeP85} 
+                        stroke="#f59e0b" 
+                        strokeDasharray="3 3" 
+                        label={{ position: 'insideTopRight', value: `85th: ${metrics.cycleTimeP85}d`, fill: '#f59e0b', fontSize: 10 }} 
+                      />
                       <Scatter name="Issues" data={metrics.leadTimeData} fill="#8884d8" />
                     </ScatterChart>
                   </ResponsiveContainer>
@@ -348,7 +373,11 @@
                       />
                       <YAxis dataKey="age" name="Age" unit="d" fontSize={10} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Scatter name="WIP" data={metrics.agingWipData} fill="#f59e0b" />
+                      <Scatter name="WIP" data={metrics.agingWipData}>
+                        {metrics.agingWipData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Scatter>
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
