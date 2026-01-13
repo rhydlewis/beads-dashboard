@@ -1,6 +1,6 @@
 {
   "name": "beads-dashboard",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A local, real-time lean metrics dashboard for Beads",
   "main": "index.js",
   "bin": {
