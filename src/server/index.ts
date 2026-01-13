@@ -97,6 +97,21 @@ server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
 
+// Handle server errors
+server.on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`\nError: Port ${PORT} is already in use.`);
+    console.error(`\nTry one of the following:`);
+    console.error(`  • Stop the other process using port ${PORT}`);
+    console.error(`  • Run with a different port: beads-dashboard --port=<PORT>`);
+    console.error(`  • Find the process: lsof -ti:${PORT}\n`);
+    process.exit(1);
+  } else {
+    console.error('Server error:', error);
+    process.exit(1);
+  }
+});
+
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, closing server...');
