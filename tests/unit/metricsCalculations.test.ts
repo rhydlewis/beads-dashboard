@@ -8,6 +8,12 @@ import {
   calculateCumulativeFlow,
   calculateAverageAge,
   calculateMetrics,
+  getGranularityConfig,
+  bucketTimestamp,
+  formatBucketKey,
+  formatTimeValue,
+  getAgeBuckets,
+  getAgeColor,
 } from '@/utils/metricsCalculations';
 
 // Test fixtures
@@ -19,6 +25,137 @@ const createIssue = (overrides: Partial<Issue>): Issue => ({
   priority: 2,
   created_at: '2024-01-01T00:00:00Z',
   ...overrides,
+});
+
+describe('Granularity Helper Functions', () => {
+  describe('getGranularityConfig', () => {
+    it('returns correct config for each granularity', () => {
+      expect(getGranularityConfig('hourly').hoursPerBucket).toBe(1);
+      expect(getGranularityConfig('hourly').displayUnit).toBe('hours');
+
+      expect(getGranularityConfig('4-hourly').hoursPerBucket).toBe(4);
+      expect(getGranularityConfig('4-hourly').displayUnit).toBe('hours');
+
+      expect(getGranularityConfig('8-hourly').hoursPerBucket).toBe(8);
+      expect(getGranularityConfig('8-hourly').displayUnit).toBe('days');
+
+      expect(getGranularityConfig('daily').hoursPerBucket).toBe(24);
+      expect(getGranularityConfig('daily').displayUnit).toBe('days');
+    });
+  });
+
+  describe('bucketTimestamp', () => {
+    it('buckets hourly correctly', () => {
+      const ts = new Date('2024-01-01T13:45:30Z').getTime();
+      const bucketed = new Date(bucketTimestamp(ts, 1));
+      expect(bucketed.toISOString()).toBe('2024-01-01T13:00:00.000Z');
+    });
+
+    it('buckets 4-hourly correctly', () => {
+      const ts = new Date('2024-01-01T13:45:30Z').getTime();
+      const bucketed = new Date(bucketTimestamp(ts, 4));
+      expect(bucketed.toISOString()).toBe('2024-01-01T12:00:00.000Z');
+    });
+
+    it('buckets 8-hourly correctly', () => {
+      const ts = new Date('2024-01-01T13:45:30Z').getTime();
+      const bucketed = new Date(bucketTimestamp(ts, 8));
+      expect(bucketed.toISOString()).toBe('2024-01-01T08:00:00.000Z');
+    });
+
+    it('buckets daily correctly', () => {
+      const ts = new Date('2024-01-01T13:45:30Z').getTime();
+      const bucketed = new Date(bucketTimestamp(ts, 24));
+      expect(bucketed.toISOString()).toBe('2024-01-01T00:00:00.000Z');
+    });
+
+    it('handles midnight correctly', () => {
+      const ts = new Date('2024-01-01T00:00:00Z').getTime();
+      const bucketed = new Date(bucketTimestamp(ts, 4));
+      expect(bucketed.toISOString()).toBe('2024-01-01T00:00:00.000Z');
+    });
+  });
+
+  describe('formatBucketKey', () => {
+    it('formats daily as YYYY-MM-DD', () => {
+      const ts = new Date('2024-01-15T13:00:00Z').getTime();
+      expect(formatBucketKey(ts, 'daily')).toBe('2024-01-15');
+    });
+
+    it('formats sub-daily with hour', () => {
+      const ts = new Date('2024-01-15T13:00:00Z').getTime();
+      expect(formatBucketKey(ts, 'hourly')).toBe('2024-01-15 13:00');
+      expect(formatBucketKey(ts, '4-hourly')).toBe('2024-01-15 13:00');
+      expect(formatBucketKey(ts, '8-hourly')).toBe('2024-01-15 13:00');
+    });
+
+    it('formats midnight hour correctly', () => {
+      const ts = new Date('2024-01-15T00:00:00Z').getTime();
+      expect(formatBucketKey(ts, 'hourly')).toBe('2024-01-15 00:00');
+    });
+  });
+
+  describe('formatTimeValue', () => {
+    it('formats hours with h suffix', () => {
+      expect(formatTimeValue(12.5, 'hours')).toBe('12.5h');
+      expect(formatTimeValue(1, 'hours')).toBe('1.0h');
+      expect(formatTimeValue(0, 'hours')).toBe('0.0h');
+    });
+
+    it('formats days with d suffix', () => {
+      expect(formatTimeValue(48, 'days')).toBe('2.0d');
+      expect(formatTimeValue(24, 'days')).toBe('1.0d');
+      expect(formatTimeValue(12, 'days')).toBe('0.5d');
+    });
+
+    it('rounds to 1 decimal place', () => {
+      expect(formatTimeValue(12.456, 'hours')).toBe('12.5h');
+      expect(formatTimeValue(12.444, 'hours')).toBe('12.4h');
+    });
+  });
+
+  describe('getAgeBuckets', () => {
+    it('returns hour buckets for hourly/4-hourly', () => {
+      const { ranges, limits } = getAgeBuckets('hourly');
+      expect(ranges).toEqual(['0-4h', '4-8h', '8-12h', '12h+']);
+      expect(limits).toEqual([4, 8, 12, Infinity]);
+
+      const result2 = getAgeBuckets('4-hourly');
+      expect(result2.ranges).toEqual(['0-4h', '4-8h', '8-12h', '12h+']);
+    });
+
+    it('returns day buckets for 8-hourly/daily', () => {
+      const { ranges, limits } = getAgeBuckets('daily');
+      expect(ranges).toEqual(['0-7d', '8-14d', '15-30d', '30d+']);
+      expect(limits).toEqual([7 * 24, 14 * 24, 30 * 24, Infinity]);
+
+      const result2 = getAgeBuckets('8-hourly');
+      expect(result2.ranges).toEqual(['0-7d', '8-14d', '15-30d', '30d+']);
+    });
+  });
+
+  describe('getAgeColor', () => {
+    it('applies hour-based thresholds for hourly views', () => {
+      expect(getAgeColor(2, 'hourly')).toBe('#10b981'); // green <=4h
+      expect(getAgeColor(4, 'hourly')).toBe('#10b981'); // green <=4h
+      expect(getAgeColor(6, 'hourly')).toBe('#f59e0b'); // orange <=12h
+      expect(getAgeColor(12, 'hourly')).toBe('#f59e0b'); // orange <=12h
+      expect(getAgeColor(15, 'hourly')).toBe('#ef4444'); // red >12h
+    });
+
+    it('applies day-based thresholds for daily views', () => {
+      expect(getAgeColor(5 * 24, 'daily')).toBe('#10b981'); // green <=7d
+      expect(getAgeColor(7 * 24, 'daily')).toBe('#10b981'); // green <=7d
+      expect(getAgeColor(20 * 24, 'daily')).toBe('#f59e0b'); // orange <=30d
+      expect(getAgeColor(30 * 24, 'daily')).toBe('#f59e0b'); // orange <=30d
+      expect(getAgeColor(40 * 24, 'daily')).toBe('#ef4444'); // red >30d
+    });
+
+    it('applies thresholds correctly for 4-hourly and 8-hourly', () => {
+      expect(getAgeColor(3, '4-hourly')).toBe('#10b981'); // hours mode
+      expect(getAgeColor(10 * 24, '8-hourly')).toBe('#f59e0b'); // days mode
+    });
+  });
 });
 
 describe('calculateLeadTime', () => {

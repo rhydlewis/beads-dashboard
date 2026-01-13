@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { Issue } from '@shared/types';
+import type { Issue, TimeGranularity } from '@shared/types';
 import { useMetrics } from '@/hooks/useMetrics';
 import DashboardView from '@/components/DashboardView';
 import TableView from '@/components/TableView';
@@ -11,8 +11,12 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'table' | 'dashboard'>('table');
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [granularity, setGranularity] = useState<TimeGranularity>(() => {
+    const saved = localStorage.getItem('beads-granularity');
+    return (saved as TimeGranularity) || 'daily';
+  });
 
-  const metrics = useMetrics(parsedIssues);
+  const metrics = useMetrics(parsedIssues, granularity);
 
   const fetchData = async () => {
     try {
@@ -44,6 +48,11 @@ function App() {
       socketInstance.disconnect();
     };
   }, []);
+
+  // Persist granularity to localStorage
+  useEffect(() => {
+    localStorage.setItem('beads-granularity', granularity);
+  }, [granularity]);
 
   // Extract project name from issue IDs
   const projectName = parsedIssues.length > 0
@@ -109,7 +118,11 @@ function App() {
       ) : activeTab === 'table' ? (
         <TableView issues={parsedIssues} />
       ) : (
-        <DashboardView metrics={metrics} />
+        <DashboardView
+          metrics={metrics}
+          granularity={granularity}
+          onGranularityChange={setGranularity}
+        />
       )}
     </div>
   );

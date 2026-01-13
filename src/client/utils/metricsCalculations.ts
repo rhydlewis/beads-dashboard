@@ -5,13 +5,97 @@ import type {
   AgingWipDataPoint,
   FlowChartDataPoint,
   AgeChartDataPoint,
+  TimeGranularity,
+  GranularityConfig,
 } from '@shared/types';
+import { GRANULARITY_OPTIONS } from '@shared/types';
+
+/**
+ * Get granularity configuration
+ */
+export function getGranularityConfig(granularity: TimeGranularity): GranularityConfig {
+  return GRANULARITY_OPTIONS.find(opt => opt.value === granularity)!;
+}
+
+/**
+ * Bucket timestamp to nearest time boundary
+ */
+export function bucketTimestamp(timestamp: number, hoursPerBucket: number): number {
+  const date = new Date(timestamp);
+  const hours = date.getUTCHours();
+  const bucketedHour = Math.floor(hours / hoursPerBucket) * hoursPerBucket;
+  date.setUTCHours(bucketedHour, 0, 0, 0);
+  return date.getTime();
+}
+
+/**
+ * Format bucket key for display
+ */
+export function formatBucketKey(timestamp: number, granularity: TimeGranularity): string {
+  const date = new Date(timestamp);
+  const dateStr = date.toISOString().split('T')[0];
+
+  if (granularity === 'daily') {
+    return dateStr;
+  }
+
+  const hour = date.getUTCHours().toString().padStart(2, '0');
+  return `${dateStr} ${hour}:00`;
+}
+
+/**
+ * Format time value for display
+ */
+export function formatTimeValue(hours: number, unit: 'hours' | 'days'): string {
+  if (unit === 'hours') {
+    return `${hours.toFixed(1)}h`;
+  } else {
+    const days = hours / 24;
+    return `${days.toFixed(1)}d`;
+  }
+}
+
+/**
+ * Get age distribution buckets based on granularity
+ */
+export function getAgeBuckets(granularity: TimeGranularity): { ranges: string[]; limits: number[] } {
+  const config = getGranularityConfig(granularity);
+
+  if (config.displayUnit === 'hours') {
+    return {
+      ranges: ['0-4h', '4-8h', '8-12h', '12h+'],
+      limits: [4, 8, 12, Infinity],
+    };
+  } else {
+    return {
+      ranges: ['0-7d', '8-14d', '15-30d', '30d+'],
+      limits: [7 * 24, 14 * 24, 30 * 24, Infinity],
+    };
+  }
+}
+
+/**
+ * Determine color based on age thresholds
+ */
+export function getAgeColor(ageHours: number, granularity: TimeGranularity): string {
+  const config = getGranularityConfig(granularity);
+
+  if (config.displayUnit === 'hours') {
+    return ageHours <= 4 ? '#10b981' : ageHours <= 12 ? '#f59e0b' : '#ef4444';
+  } else {
+    return ageHours <= 7 * 24 ? '#10b981' : ageHours <= 30 * 24 ? '#f59e0b' : '#ef4444';
+  }
+}
 
 /**
  * Calculate lead time data for closed issues
  * Returns an array of data points with cycle times for the scatterplot
  */
-export function calculateLeadTime(issues: Issue[]): LeadTimeDataPoint[] {
+export function calculateLeadTime(
+  issues: Issue[],
+  granularity: TimeGranularity = 'daily'
+): LeadTimeDataPoint[] {
+  const config = getGranularityConfig(granularity);
   const closedIssues = issues.filter(
     (i) => i.status === 'closed' && i.updated_at
   );
@@ -20,16 +104,21 @@ export function calculateLeadTime(issues: Issue[]): LeadTimeDataPoint[] {
     .map((i) => {
       const created = new Date(i.created_at);
       const closed = new Date(i.updated_at!);
-      const cycleTime = Math.max(
+
+      const cycleTimeHours = Math.max(
         0,
-        Math.ceil((closed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
+        (closed.getTime() - created.getTime()) / (1000 * 60 * 60)
       );
+
+      const bucketedTimestamp = bucketTimestamp(closed.getTime(), config.hoursPerBucket);
+      const bucketKey = formatBucketKey(bucketedTimestamp, granularity);
 
       return {
         id: i.id,
-        closedDate: closed.getTime(),
-        closedDateStr: i.updated_at!.split('T')[0],
-        cycleTime,
+        closedDate: bucketedTimestamp,
+        closedDateStr: bucketKey,
+        cycleTimeHours,
+        cycleTimeDays: cycleTimeHours / 24,
         title: i.title || i.id,
       };
     })
@@ -53,23 +142,23 @@ export function calculatePercentile(values: number[], percentile: number): numbe
  * Calculate aging WIP (work in progress) data
  * Returns data points for the aging WIP scatterplot with color coding
  */
-export function calculateAgingWIP(issues: Issue[], today: Date = new Date()): AgingWipDataPoint[] {
+export function calculateAgingWIP(
+  issues: Issue[],
+  today: Date = new Date(),
+  granularity: TimeGranularity = 'daily'
+): AgingWipDataPoint[] {
   const openIssues = issues.filter((i) => i.status !== 'closed');
 
   return openIssues.map((i) => {
-    const ageInDays = Math.floor(
-      (today.getTime() - new Date(i.created_at).getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    // Color based on age: green <=7d, orange <=30d, red >30d
-    const color = ageInDays <= 7 ? '#10b981' : ageInDays <= 30 ? '#f59e0b' : '#ef4444';
+    const ageHours = (today.getTime() - new Date(i.created_at).getTime()) / (1000 * 60 * 60);
 
     return {
       id: i.id,
       status: i.status,
-      age: ageInDays,
+      ageHours,
+      ageDays: ageHours / 24,
       title: i.title || i.id,
-      color,
+      color: getAgeColor(ageHours, granularity),
     };
   });
 }
@@ -77,83 +166,111 @@ export function calculateAgingWIP(issues: Issue[], today: Date = new Date()): Ag
 /**
  * Calculate age distribution buckets for open issues
  */
-export function calculateAgeDistribution(issues: Issue[], today: Date = new Date()): AgeChartDataPoint[] {
+export function calculateAgeDistribution(
+  issues: Issue[],
+  today: Date = new Date(),
+  granularity: TimeGranularity = 'daily'
+): AgeChartDataPoint[] {
   const openIssues = issues.filter((i) => i.status !== 'closed');
+  const { ranges, limits } = getAgeBuckets(granularity);
 
-  const ageBuckets = { '0-7d': 0, '8-14d': 0, '15-30d': 0, '30d+': 0 };
+  const bucketCounts = ranges.map(() => 0);
 
   openIssues.forEach((i) => {
-    const ageInDays = Math.floor(
-      (today.getTime() - new Date(i.created_at).getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const ageHours = (today.getTime() - new Date(i.created_at).getTime()) / (1000 * 60 * 60);
 
-    if (ageInDays <= 7) ageBuckets['0-7d']++;
-    else if (ageInDays <= 14) ageBuckets['8-14d']++;
-    else if (ageInDays <= 30) ageBuckets['15-30d']++;
-    else ageBuckets['30d+']++;
+    for (let idx = 0; idx < limits.length; idx++) {
+      if (ageHours <= limits[idx] || idx === limits.length - 1) {
+        bucketCounts[idx]++;
+        break;
+      }
+    }
   });
 
-  return Object.entries(ageBuckets).map(([range, count]) => ({
+  return ranges.map((range, idx) => ({
     range,
-    count,
+    count: bucketCounts[idx],
+    bucketIndex: idx,
   }));
 }
 
 /**
  * Calculate cumulative flow diagram data
  * Returns an array of data points with running totals of created and closed issues
- * Fills in all dates from the earliest issue to today
+ * Fills in all buckets from the earliest issue to today
  */
-export function calculateCumulativeFlow(issues: Issue[], today: Date = new Date()): FlowChartDataPoint[] {
+export function calculateCumulativeFlow(
+  issues: Issue[],
+  today: Date = new Date(),
+  granularity: TimeGranularity = 'daily'
+): FlowChartDataPoint[] {
   if (issues.length === 0) return [];
 
-  // 1. Organize activity by date
-  const activityByDate: Record<string, { created: number; closed: number }> = {};
-  let earliestDate = new Date(today);
+  const config = getGranularityConfig(granularity);
+
+  // For hourly/4-hourly, limit to last 30 days
+  const MAX_DAYS = 30;
+  const isSubDaily = config.hoursPerBucket < 24;
+  const limitTimestamp = isSubDaily
+    ? today.getTime() - (MAX_DAYS * 24 * 60 * 60 * 1000)
+    : 0;
+
+  const activityByBucket: Record<string, { created: number; closed: number }> = {};
+  let earliestTimestamp = today.getTime();
 
   issues.forEach((i) => {
-    const cDateStr = i.created_at.split('T')[0];
-    const cDate = new Date(cDateStr);
+    const createdTimestamp = new Date(i.created_at).getTime();
+    const createdBucket = bucketTimestamp(createdTimestamp, config.hoursPerBucket);
+    const createdKey = formatBucketKey(createdBucket, granularity);
 
-    if (cDate < earliestDate) {
-      earliestDate = cDate;
+    if (createdTimestamp < earliestTimestamp) {
+      earliestTimestamp = createdTimestamp;
     }
 
-    if (!activityByDate[cDateStr]) {
-      activityByDate[cDateStr] = { created: 0, closed: 0 };
+    if (!activityByBucket[createdKey]) {
+      activityByBucket[createdKey] = { created: 0, closed: 0 };
     }
-    activityByDate[cDateStr].created++;
+    activityByBucket[createdKey].created++;
 
     if (i.status === 'closed' && i.updated_at) {
-      const clDateStr = i.updated_at.split('T')[0];
-      if (!activityByDate[clDateStr]) {
-        activityByDate[clDateStr] = { created: 0, closed: 0 };
+      const closedTimestamp = new Date(i.updated_at).getTime();
+      const closedBucket = bucketTimestamp(closedTimestamp, config.hoursPerBucket);
+      const closedKey = formatBucketKey(closedBucket, granularity);
+
+      if (!activityByBucket[closedKey]) {
+        activityByBucket[closedKey] = { created: 0, closed: 0 };
       }
-      activityByDate[clDateStr].closed++;
+      activityByBucket[closedKey].closed++;
     }
   });
 
-  // 2. Fill in continuous timeline
   const flowChartData: FlowChartDataPoint[] = [];
   let runCreated = 0;
   let runClosed = 0;
 
-  const iterDate = new Date(earliestDate);
-  while (iterDate <= today) {
-    const dateStr = iterDate.toISOString().split('T')[0];
-    const dayActivity = activityByDate[dateStr] || { created: 0, closed: 0 };
+  let iterTimestamp = bucketTimestamp(earliestTimestamp, config.hoursPerBucket);
+  if (limitTimestamp > 0) {
+    iterTimestamp = Math.max(iterTimestamp, limitTimestamp);
+  }
 
-    runCreated += dayActivity.created;
-    runClosed += dayActivity.closed;
+  const todayBucket = bucketTimestamp(today.getTime(), config.hoursPerBucket);
+
+  while (iterTimestamp <= todayBucket) {
+    const bucketKey = formatBucketKey(iterTimestamp, granularity);
+    const bucketActivity = activityByBucket[bucketKey] || { created: 0, closed: 0 };
+
+    runCreated += bucketActivity.created;
+    runClosed += bucketActivity.closed;
 
     flowChartData.push({
-      date: dateStr,
+      date: bucketKey,
+      timestamp: iterTimestamp,
       open: runCreated - runClosed,
       closed: runClosed,
-      throughput: dayActivity.closed,
+      throughput: bucketActivity.closed,
     });
 
-    iterDate.setDate(iterDate.getDate() + 1);
+    iterTimestamp += config.hoursPerBucket * 60 * 60 * 1000;
   }
 
   return flowChartData;
@@ -162,26 +279,42 @@ export function calculateCumulativeFlow(issues: Issue[], today: Date = new Date(
 /**
  * Calculate average age of open issues
  */
-export function calculateAverageAge(issues: Issue[], today: Date = new Date()): number {
+export function calculateAverageAge(
+  issues: Issue[],
+  today: Date = new Date(),
+  granularity: TimeGranularity = 'daily'
+): { value: number; formatted: string; unit: 'hours' | 'days' } {
   const openIssues = issues.filter((i) => i.status !== 'closed');
+  const config = getGranularityConfig(granularity);
 
-  if (openIssues.length === 0) return 0;
+  if (openIssues.length === 0) {
+    return {
+      value: 0,
+      formatted: '0' + (config.displayUnit === 'hours' ? 'h' : 'd'),
+      unit: config.displayUnit
+    };
+  }
 
-  const totalAge = openIssues.reduce((sum, i) => {
-    const ageInDays = Math.floor(
-      (today.getTime() - new Date(i.created_at).getTime()) / (1000 * 60 * 60 * 24)
-    );
-    return sum + ageInDays;
+  const totalHours = openIssues.reduce((sum, i) => {
+    const ageHours = (today.getTime() - new Date(i.created_at).getTime()) / (1000 * 60 * 60);
+    return sum + ageHours;
   }, 0);
 
-  return totalAge / openIssues.length;
+  const avgHours = totalHours / openIssues.length;
+  const formatted = formatTimeValue(avgHours, config.displayUnit);
+
+  return { value: avgHours, formatted, unit: config.displayUnit };
 }
 
 /**
  * Main function to calculate all metrics
  * Returns a complete Metrics object for the dashboard
  */
-export function calculateMetrics(issues: Issue[], today: Date = new Date()): Metrics | null {
+export function calculateMetrics(
+  issues: Issue[],
+  today: Date = new Date(),
+  granularity: TimeGranularity = 'daily'
+): Metrics | null {
   if (issues.length === 0) return null;
 
   // Filter out tombstones (deleted issues)
@@ -189,20 +322,24 @@ export function calculateMetrics(issues: Issue[], today: Date = new Date()): Met
 
   if (activeIssues.length === 0) return null;
 
+  const config = getGranularityConfig(granularity);
   const openIssues = activeIssues.filter((i) => i.status !== 'closed');
-  const leadTimeData = calculateLeadTime(activeIssues);
-  const agingWipData = calculateAgingWIP(activeIssues, today);
-  const flowChartData = calculateCumulativeFlow(activeIssues, today);
-  const ageChartData = calculateAgeDistribution(activeIssues, today);
-  const avgAge = calculateAverageAge(activeIssues, today);
 
-  // Calculate percentiles from lead time data
-  const cycleTimes = leadTimeData.map((d) => d.cycleTime);
-  const cycleTimeP50 = calculatePercentile(cycleTimes, 0.5);
-  const cycleTimeP85 = calculatePercentile(cycleTimes, 0.85);
+  const leadTimeData = calculateLeadTime(activeIssues, granularity);
+  const agingWipData = calculateAgingWIP(activeIssues, today, granularity);
+  const flowChartData = calculateCumulativeFlow(activeIssues, today, granularity);
+  const ageChartData = calculateAgeDistribution(activeIssues, today, granularity);
+  const avgAgeData = calculateAverageAge(activeIssues, today, granularity);
+
+  // Calculate percentiles from lead time data (always in hours)
+  const cycleTimesHours = leadTimeData.map((d) => d.cycleTimeHours);
+  const cycleTimeP50 = calculatePercentile(cycleTimesHours, 0.5);
+  const cycleTimeP85 = calculatePercentile(cycleTimesHours, 0.85);
 
   return {
-    avgAge: avgAge.toFixed(1),
+    avgAge: avgAgeData.formatted,
+    avgAgeRaw: avgAgeData.value,
+    displayUnit: config.displayUnit,
     openCount: openIssues.length,
     cycleTimeP50,
     cycleTimeP85,
@@ -210,5 +347,6 @@ export function calculateMetrics(issues: Issue[], today: Date = new Date()): Met
     agingWipData,
     flowChartData,
     ageChartData,
+    granularity,
   };
 }

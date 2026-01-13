@@ -1,3 +1,22 @@
+// Time granularity options for metrics display
+export type TimeGranularity = 'hourly' | '4-hourly' | '8-hourly' | 'daily';
+
+// Granularity configuration
+export interface GranularityConfig {
+  value: TimeGranularity;
+  label: string;
+  hoursPerBucket: number;
+  displayUnit: 'hours' | 'days';
+}
+
+// Granularity options constant
+export const GRANULARITY_OPTIONS: GranularityConfig[] = [
+  { value: 'hourly', label: 'Hourly', hoursPerBucket: 1, displayUnit: 'hours' },
+  { value: '4-hourly', label: '4-Hour', hoursPerBucket: 4, displayUnit: 'hours' },
+  { value: '8-hourly', label: '8-Hour', hoursPerBucket: 8, displayUnit: 'days' },
+  { value: 'daily', label: 'Daily', hoursPerBucket: 24, displayUnit: 'days' },
+];
+
 // Issue statuses as defined by Beads
 export type IssueStatus =
   | 'open'
@@ -34,9 +53,10 @@ export interface Issue {
 // Data point for lead time scatterplot
 export interface LeadTimeDataPoint {
   id: string;
-  closedDate: number; // Unix timestamp for X axis
+  closedDate: number; // Unix timestamp for X axis (bucketed by granularity)
   closedDateStr: string; // Formatted date string
-  cycleTime: number; // Days from creation to closure
+  cycleTimeHours: number; // Cycle time in hours
+  cycleTimeDays: number; // Cycle time in days
   title: string;
 }
 
@@ -44,35 +64,41 @@ export interface LeadTimeDataPoint {
 export interface AgingWipDataPoint {
   id: string;
   status: string;
-  age: number; // Days since creation
+  ageHours: number; // Age in hours
+  ageDays: number; // Age in days
   title: string;
   color: string; // Color based on age (green/orange/red)
 }
 
 // Data point for cumulative flow diagram
 export interface FlowChartDataPoint {
-  date: string; // YYYY-MM-DD
+  date: string; // Bucket identifier (YYYY-MM-DD or YYYY-MM-DD HH:00)
+  timestamp: number; // Unix timestamp for sorting
   open: number; // Running total of open issues
   closed: number; // Running total of closed issues
-  throughput: number; // Issues closed on this day
+  throughput: number; // Issues closed in this bucket
 }
 
 // Age distribution bucket
 export interface AgeChartDataPoint {
-  range: string; // e.g., "0-7d", "8-14d"
+  range: string; // e.g., "0-7d", "8-14d" or "0-4h", "4-8h"
   count: number;
+  bucketIndex: number; // For consistent coloring
 }
 
 // Calculated metrics for dashboard
 export interface Metrics {
-  avgAge: string; // Average age of open issues
+  avgAge: string; // Average age of open issues (formatted with unit)
+  avgAgeRaw: number; // Raw numeric value in hours
+  displayUnit: 'hours' | 'days'; // Which unit is being displayed
   openCount: number; // Total open issues
-  cycleTimeP50: number; // 50th percentile cycle time
-  cycleTimeP85: number; // 85th percentile cycle time
+  cycleTimeP50: number; // 50th percentile cycle time (in hours)
+  cycleTimeP85: number; // 85th percentile cycle time (in hours)
   leadTimeData: LeadTimeDataPoint[];
   agingWipData: AgingWipDataPoint[];
   flowChartData: FlowChartDataPoint[];
   ageChartData: AgeChartDataPoint[];
+  granularity: TimeGranularity; // Current granularity setting
 }
 
 // API request/response types
