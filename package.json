@@ -2,7 +2,14 @@
   "name": "beads-dashboard",
   "version": "0.1.4",
   "description": "A local, real-time lean metrics dashboard for Beads",
-  "main": "index.js",
+  "main": "dist/server/server/index.js",
+  "files": [
+    "bin",
+    "dist",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": {
     "beads-dashboard": "./bin/beads-dashboard.js"
   },

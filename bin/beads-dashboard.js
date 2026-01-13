@@ -18,7 +18,7 @@ if (args.includes('--help') || args.includes('-h')) {
   console.log(`
 Beads Performance Dashboard
 
-BETA SOFTWARE
+BETA SOFTWARE: 
 This tool is under active development and provided “as is,” without warranty. Use at your own risk.
 
 A local, real-time lean metrics dashboard for Beads issue tracker.
