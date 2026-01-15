@@ -18,6 +18,7 @@ import {
   Filter,
   FilterX,
   ChevronDown,
+  ChevronUp,
   Play,
   Check,
   Search,
@@ -55,6 +56,7 @@ function TableView({ issues }: TableViewProps) {
 
   // Quick action state
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [updatingPriority, setUpdatingPriority] = useState<string | null>(null);
 
   // Persist filters to localStorage
   useEffect(() => {
@@ -277,6 +279,26 @@ function TableView({ issues }: TableViewProps) {
       alert(`Failed to update status: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setUpdatingStatus(null);
+    }
+  };
+
+  const handlePriorityUpdate = async (issueId: string, newPriority: Priority) => {
+    setUpdatingPriority(issueId);
+    try {
+      const res = await fetch(`/api/issues/${issueId}/priority`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority: newPriority }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update priority');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to update priority: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setUpdatingPriority(null);
     }
   };
 
@@ -507,10 +529,46 @@ function TableView({ issues }: TableViewProps) {
                       </span>
                     </td>
                     <td className="px-6 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium ${getPriorityStyle(issue.priority)}`}>
-                        {PriorityIcon}
-                        {priorityLabel}
-                      </span>
+                      <div 
+                        className="flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 -ml-1"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            if (issue.priority > 0 && updatingPriority !== issue.id) {
+                              handlePriorityUpdate(issue.id, (issue.priority - 1) as Priority);
+                            }
+                          } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            if (issue.priority < 4 && updatingPriority !== issue.id) {
+                              handlePriorityUpdate(issue.id, (issue.priority + 1) as Priority);
+                            }
+                          }
+                        }}
+                      >
+                        <button
+                          onClick={() => handlePriorityUpdate(issue.id, (issue.priority - 1) as Priority)}
+                          disabled={issue.priority === 0 || updatingPriority === issue.id}
+                          className="text-slate-300 hover:text-blue-600 disabled:text-slate-200 disabled:cursor-not-allowed opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5"
+                          title="Increase Priority (Up Arrow)"
+                          tabIndex={-1}
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium ${getPriorityStyle(issue.priority)}`}>
+                          {PriorityIcon}
+                          {priorityLabel}
+                        </span>
+                        <button
+                          onClick={() => handlePriorityUpdate(issue.id, (issue.priority + 1) as Priority)}
+                          disabled={issue.priority === 4 || updatingPriority === issue.id}
+                          className="text-slate-300 hover:text-blue-600 disabled:text-slate-200 disabled:cursor-not-allowed opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5"
+                          title="Decrease Priority (Down Arrow)"
+                          tabIndex={-1}
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-3">
                       <span

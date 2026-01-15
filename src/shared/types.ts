@@ -110,6 +110,10 @@ export interface UpdateIssueStatusRequest {
   status: IssueStatus;
 }
 
+export interface UpdateIssuePriorityRequest {
+  priority: Priority;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;

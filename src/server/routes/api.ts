@@ -3,7 +3,7 @@ import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { readBeadsData } from '../utils/beadsReader.js';
-import type { UpdateIssueDescriptionRequest, UpdateIssueStatusRequest } from '@shared/types';
+import type { UpdateIssueDescriptionRequest, UpdateIssueStatusRequest, UpdateIssuePriorityRequest } from '@shared/types';
 
 export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
   const router = express.Router();
@@ -94,6 +94,50 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
     try {
       await new Promise<void>((resolve, reject) => {
         exec(`bd update ${id} --status=${status}`, { cwd: projectRoot }, (error, _stdout, stderr) => {
+          if (error) {
+            console.error(`exec error: ${error}`);
+            return reject(new Error(stderr || error.message));
+          }
+          resolve();
+        });
+      });
+
+      // Flush changes to JSONL file
+      await new Promise<void>((resolve, _reject) => {
+        exec('bd sync --flush-only', { cwd: projectRoot }, (syncError, _syncStdout, _syncStderr) => {
+          if (syncError) {
+            console.error(`sync error: ${syncError}`);
+            // Don't fail the request if sync fails
+          }
+          resolve();
+        });
+      });
+
+      res.json({ success: true });
+
+      // Manually trigger refresh after sync
+      emitRefresh();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  /**
+   * POST /api/issues/:id/priority
+   * Updates issue priority via bd update command
+   */
+  router.post('/issues/:id/priority', async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { priority } = req.body as UpdateIssuePriorityRequest;
+
+    if (priority === undefined || priority === null) {
+      return res.status(400).json({ error: 'Priority is required' });
+    }
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        exec(`bd update ${id} --priority=${priority}`, { cwd: projectRoot }, (error, _stdout, stderr) => {
           if (error) {
             console.error(`exec error: ${error}`);
             return reject(new Error(stderr || error.message));
