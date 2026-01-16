@@ -59,20 +59,9 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
         });
       });
 
-      // Flush changes to JSONL file
-      await new Promise<void>((resolve, _reject) => {
-        exec('bd sync --flush-only', { cwd: projectRoot }, (syncError, _syncStdout, _syncStderr) => {
-          if (syncError) {
-            console.error(`sync error: ${syncError}`);
-            // Don't fail the request if sync fails
-          }
-          resolve();
-        });
-      });
-
       res.json({ success: true });
 
-      // Manually trigger refresh after sync
+      // Emit refresh so clients reload from database
       emitRefresh();
     } catch (error) {
       // Clean up temp file if it still exists
@@ -93,38 +82,36 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
     const { id } = req.params;
     const { status } = req.body as UpdateIssueStatusRequest;
 
+    console.log(`[API] Updating issue ${id} to status: ${status}`);
+
     if (!status) {
       return res.status(400).json({ error: 'Status is required' });
     }
 
     try {
       await new Promise<void>((resolve, reject) => {
-        exec(`bd update ${id} --status=${status}`, { cwd: projectRoot }, (error, _stdout, stderr) => {
+        exec(`bd update ${id} --status=${status}`, { cwd: projectRoot }, (error, stdout, stderr) => {
           if (error) {
-            console.error(`exec error: ${error}`);
+            console.error(`[API] bd update error: ${error}`);
+            console.error(`[API] stderr: ${stderr}`);
             return reject(new Error(stderr || error.message));
           }
+          console.log(`[API] bd update stdout: ${stdout}`);
+          console.log(`[API] bd update stderr: ${stderr}`);
           resolve();
         });
       });
 
-      // Flush changes to JSONL file
-      await new Promise<void>((resolve, _reject) => {
-        exec('bd sync --flush-only', { cwd: projectRoot }, (syncError, _syncStdout, _syncStderr) => {
-          if (syncError) {
-            console.error(`sync error: ${syncError}`);
-            // Don't fail the request if sync fails
-          }
-          resolve();
-        });
-      });
-
+      console.log(`[API] Sending success response`);
       res.json({ success: true });
 
-      // Manually trigger refresh after sync
+      // Emit refresh so clients reload from database
+      // Note: We no longer need bd sync --flush-only because we read directly from the database
       emitRefresh();
+      // and emit refresh automatically
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`[API] Error updating status: ${errorMessage}`);
       res.status(500).json({ error: errorMessage });
     }
   });
@@ -152,20 +139,9 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
         });
       });
 
-      // Flush changes to JSONL file
-      await new Promise<void>((resolve, _reject) => {
-        exec('bd sync --flush-only', { cwd: projectRoot }, (syncError, _syncStdout, _syncStderr) => {
-          if (syncError) {
-            console.error(`sync error: ${syncError}`);
-            // Don't fail the request if sync fails
-          }
-          resolve();
-        });
-      });
-
       res.json({ success: true });
 
-      // Manually trigger refresh after sync
+      // Emit refresh so clients reload from database
       emitRefresh();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -222,7 +198,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       });
 
       res.json({ success: true });
-      emitRefresh();
+      // Don't manually emit refresh - the file watcher will detect the issues.jsonl change
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ error: errorMessage });
@@ -278,7 +254,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       });
 
       res.json({ success: true });
-      emitRefresh();
+      // Don't manually emit refresh - the file watcher will detect the issues.jsonl change
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ error: errorMessage });

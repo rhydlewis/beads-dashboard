@@ -15,9 +15,6 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'table' | 'board' | 'dashboard' | 'aging'>('table');
-    const saved = localStorage.getItem('beads-active-tab');
-    return (saved as 'table' | 'board' | 'dashboard') || 'table';
-  });
   const [socket, setSocket] = useState<Socket | null>(null);
   const [granularity, setGranularity] = useState<TimeGranularity>(() => {
     const saved = localStorage.getItem('beads-granularity');
@@ -30,9 +27,11 @@ function App() {
 
   const fetchData = async () => {
     try {
+      console.log('[App] Fetching data from /api/data');
       const res = await fetch('/api/data');
       if (!res.ok) throw new Error('Failed to fetch data');
       const data = await res.json();
+      console.log(`[App] Fetched ${data.length} issues`);
       setParsedIssues(data);
       setLoading(false);
       setError(null);
@@ -50,7 +49,7 @@ function App() {
     setSocket(socketInstance);
 
     socketInstance.on('refresh', () => {
-      console.log('Data changed, reloading...');
+      console.log('[Socket] Received refresh event - reloading data');
       fetchData();
     });
 

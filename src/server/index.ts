@@ -70,8 +70,15 @@ if (beadsDirectoryExists(projectRoot)) {
   });
 
   watcher.on('all', (event, filePath) => {
-    console.log(`File ${event}: ${filePath}`);
-    io.emit('refresh');
+    // Only emit refresh when the SQLite database changes
+    // This catches manual bd CLI updates outside the dashboard
+    const fileName = path.basename(filePath);
+    if (fileName === 'beads.db') {
+      console.log(`File ${event}: ${filePath} - database changed, emitting refresh`);
+      io.emit('refresh');
+    } else {
+      console.log(`File ${event}: ${filePath} - ignoring`);
+    }
   });
 
   watcher.on('error', (error) => {

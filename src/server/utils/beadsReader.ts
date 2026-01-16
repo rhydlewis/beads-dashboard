@@ -1,40 +1,48 @@
 import fs from 'fs';
-import readline from 'readline';
 import path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import type { Issue } from '@shared/types';
 
+const execAsync = promisify(exec);
+
 /**
- * Read and parse issues from .beads/issues.jsonl file
+ * Read and parse issues from the beads SQLite database using bd CLI
+ * This ensures we always read the latest data, even if JSONL sync is pending
  * @param projectRoot - Root directory containing .beads folder
  * @returns Promise<Issue[]> - Array of parsed issues
  */
 export async function readBeadsData(projectRoot: string): Promise<Issue[]> {
   const beadsDir = path.join(projectRoot, '.beads');
-  const issuesFile = path.join(beadsDir, 'issues.jsonl');
 
-  if (!fs.existsSync(issuesFile)) {
+  if (!fs.existsSync(beadsDir)) {
     return [];
   }
 
-  const allIssues: Issue[] = [];
-  const fileStream = fs.createReadStream(issuesFile);
-  const rl = readline.createInterface({
-    input: fileStream,
-    crlfDelay: Infinity,
-  });
+  try {
+    // Use bd CLI to read directly from the SQLite database
+    // This ensures we get the latest data, not stale JSONL file
+    const { stdout, stderr } = await execAsync('bd list --json --status=all', {
+      cwd: projectRoot,
+      maxBuffer: 10 * 1024 * 1024 // 10MB buffer for large datasets
+    });
 
-  for await (const line of rl) {
-    if (line.trim()) {
-      try {
-        const issue = JSON.parse(line) as Issue;
-        allIssues.push(issue);
-      } catch (e) {
-        console.error(`Error parsing line in issues.jsonl:`, (e as Error).message);
-      }
+    if (stderr) {
+      console.warn('bd list stderr:', stderr);
     }
-  }
 
-  return allIssues;
+    if (!stdout.trim()) {
+      return [];
+    }
+
+    // Parse the JSON output
+    const issues = JSON.parse(stdout) as Issue[];
+    return issues;
+  } catch (error) {
+    console.error('Error reading beads data from database:', error);
+    // Fall back to empty array if bd command fails
+    return [];
+  }
 }
 
 /**
