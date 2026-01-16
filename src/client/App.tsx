@@ -14,7 +14,10 @@ function App() {
   const [parsedIssues, setParsedIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'table' | 'board' | 'dashboard' | 'aging'>('table');
+  const [activeTab, setActiveTab] = useState<'table' | 'board' | 'dashboard' | 'aging'>(() => {
+    const saved = localStorage.getItem('beads-active-tab');
+    return (saved as 'table' | 'board' | 'dashboard' | 'aging') || 'table';
+  });
   const [socket, setSocket] = useState<Socket | null>(null);
   const [granularity, setGranularity] = useState<TimeGranularity>(() => {
     const saved = localStorage.getItem('beads-granularity');
