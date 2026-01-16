@@ -97,8 +97,10 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
 
   // Define column order
   const columnOrder: IssueStatus[] = [
+    'hooked',
     'open',
     'deferred',
+    'pinned',
     'in_progress',
     'blocked',
     'closed',
