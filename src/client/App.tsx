@@ -4,12 +4,16 @@ import type { Issue, TimeGranularity } from '@shared/types';
 import { useMetrics } from '@/hooks/useMetrics';
 import DashboardView from '@/components/DashboardView';
 import TableView from '@/components/TableView';
+import KanbanBoard from '@/components/KanbanBoard';
 
 function App() {
   const [parsedIssues, setParsedIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'table' | 'dashboard'>('table');
+  const [activeTab, setActiveTab] = useState<'table' | 'board' | 'dashboard'>(() => {
+    const saved = localStorage.getItem('beads-active-tab');
+    return (saved as 'table' | 'board' | 'dashboard') || 'table';
+  });
   const [socket, setSocket] = useState<Socket | null>(null);
   const [granularity, setGranularity] = useState<TimeGranularity>(() => {
     const saved = localStorage.getItem('beads-granularity');
@@ -54,6 +58,11 @@ function App() {
     localStorage.setItem('beads-granularity', granularity);
   }, [granularity]);
 
+  // Persist active tab to localStorage
+  useEffect(() => {
+    localStorage.setItem('beads-active-tab', activeTab);
+  }, [activeTab]);
+
   // Extract project name from issue IDs
   const projectName = parsedIssues.length > 0
     ? parsedIssues[0].id.substring(0, parsedIssues[0].id.lastIndexOf('-'))
@@ -96,6 +105,16 @@ function App() {
           </button>
           <button
             className={`pb-2 px-1 text-sm font-medium ${
+              activeTab === 'board'
+                ? 'border-b-2 border-blue-500 text-blue-600'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+            onClick={() => setActiveTab('board')}
+          >
+            Board
+          </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium ${
               activeTab === 'dashboard'
                 ? 'border-b-2 border-blue-500 text-blue-600'
                 : 'text-slate-500 hover:text-slate-700'
@@ -117,6 +136,8 @@ function App() {
         </div>
       ) : activeTab === 'table' ? (
         <TableView issues={parsedIssues} />
+      ) : activeTab === 'board' ? (
+        <KanbanBoard issues={parsedIssues} />
       ) : (
         <DashboardView
           metrics={metrics}
