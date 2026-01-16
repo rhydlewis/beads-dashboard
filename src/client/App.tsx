@@ -76,6 +76,15 @@ function App() {
     ? parsedIssues[0].id.substring(0, parsedIssues[0].id.lastIndexOf('-'))
     : '';
 
+  // Update page title with project name
+  useEffect(() => {
+    if (projectName) {
+      document.title = `${projectName} - Beads Performance Dashboard`;
+    } else {
+      document.title = 'Beads Performance Dashboard';
+    }
+  }, [projectName]);
+
   // Filter out tombstones for display count
   const activeIssuesCount = parsedIssues.filter((i) => i.status !== 'tombstone').length;
 
