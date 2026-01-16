@@ -164,7 +164,7 @@ function App() {
       ) : activeTab === 'table' ? (
         <TableView issues={parsedIssues} onRefresh={fetchData} />
       ) : activeTab === 'board' ? (
-        <KanbanBoard issues={parsedIssues} />
+        <KanbanBoard issues={parsedIssues} onRefresh={fetchData} />
       ) : activeTab === 'dashboard' ? (
         <DashboardView
           metrics={metrics}

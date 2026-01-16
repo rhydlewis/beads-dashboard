@@ -117,6 +117,40 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
   });
 
   /**
+   * POST /api/issues/:id/close
+   * Closes issue via bd close command
+   */
+  router.post('/issues/:id/close', async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    console.log(`[API] Closing issue ${id}`);
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        exec(`bd close ${id}`, { cwd: projectRoot }, (error, stdout, stderr) => {
+          if (error) {
+            console.error(`[API] bd close error: ${error}`);
+            console.error(`[API] stderr: ${stderr}`);
+            return reject(new Error(stderr || error.message));
+          }
+          console.log(`[API] bd close stdout: ${stdout}`);
+          resolve();
+        });
+      });
+
+      console.log(`[API] Sending success response`);
+      res.json({ success: true });
+
+      // Emit refresh so clients reload from database
+      emitRefresh();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`[API] Error closing issue: ${errorMessage}`);
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  /**
    * POST /api/issues/:id/priority
    * Updates issue priority via bd update command
    */
