@@ -16,11 +16,40 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
-  
+
   // Track if we have unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Track optimistic updates (saved values that haven't been confirmed by server yet)
+  const [optimisticValues, setOptimisticValues] = useState<Partial<Record<Tab, string>>>({});
+
+  // Update optimistic values when the real issue data changes and matches
+  useEffect(() => {
+    setOptimisticValues(prev => {
+      const next = { ...prev };
+
+      // Clear optimistic value if real data matches
+      if (next.description !== undefined && issue.description === next.description) {
+        delete next.description;
+      }
+      if (next.design !== undefined && issue.design === next.design) {
+        delete next.design;
+      }
+      if (next.acceptance !== undefined && issue.acceptance_criteria === next.acceptance) {
+        delete next.acceptance;
+      }
+
+      return next;
+    });
+  }, [issue]);
+
   const getFieldValue = (tab: Tab) => {
+    // First check if we have an optimistic update for this field
+    if (optimisticValues[tab] !== undefined) {
+      return optimisticValues[tab];
+    }
+
+    // Otherwise return the real data
     switch (tab) {
       case 'description': return issue.description || '';
       case 'design': return issue.design || '';
@@ -44,7 +73,7 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
     try {
       let endpoint = '';
       let body = {};
-      
+
       switch (activeTab) {
         case 'description':
           endpoint = `/api/issues/${issue.id}`;
@@ -60,6 +89,11 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
           break;
       }
 
+      // Optimistically update the UI immediately
+      setOptimisticValues(prev => ({ ...prev, [activeTab]: editValue }));
+      setIsEditing(false);
+      setHasUnsavedChanges(false);
+
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -67,14 +101,20 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
       });
 
       if (!res.ok) throw new Error('Failed to update');
-      
-      onUpdate(); // Refresh data
-      setIsEditing(false);
-      setHasUnsavedChanges(false);
-      
+
+      onUpdate(); // Refresh data - optimistic value will be cleared when real data arrives
+
     } catch (err) {
       console.error(err);
       alert('Failed to save');
+      // Revert optimistic update on error
+      setOptimisticValues(prev => {
+        const next = { ...prev };
+        delete next[activeTab];
+        return next;
+      });
+      // Go back to editing mode so user can retry
+      setIsEditing(true);
     } finally {
       setSaving(false);
     }
@@ -98,6 +138,7 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
     setActiveTab(tab);
     setIsEditing(false);
     setHasUnsavedChanges(false);
+    // Don't clear optimistic values - they should persist across tabs
   };
 
   // Close on Escape
