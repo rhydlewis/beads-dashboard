@@ -9,7 +9,9 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import { Search, X } from 'lucide-react';
 import type { Issue, IssueStatus } from '@shared/types';
+import { PRIORITY_LABELS } from '@shared/types';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import IssueViewModal from './IssueViewModal';
@@ -24,8 +26,19 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
+  // Filter text with localStorage persistence
+  const [filterText, setFilterText] = useState<string>(() => {
+    const saved = localStorage.getItem('beads-kanban-filter');
+    return saved || '';
+  });
+
   // Optimistic updates - track status changes before they're persisted
   const [optimisticStatusUpdates, setOptimisticStatusUpdates] = useState<Record<string, IssueStatus>>({});
+
+  // Persist filter text to localStorage
+  useEffect(() => {
+    localStorage.setItem('beads-kanban-filter', filterText);
+  }, [filterText]);
 
   // Clear optimistic updates only when they're reflected in real data
   useEffect(() => {
@@ -101,20 +114,39 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
     return optimisticStatus ? { ...issue, status: optimisticStatus } : issue;
   });
 
-  // Group issues by status (with optimistic updates applied)
+  // Apply text filter
+  const filteredIssues = issuesWithOptimisticUpdates.filter(issue => {
+    if (!filterText) return true;
+
+    const searchLower = filterText.toLowerCase();
+    const idMatch = issue.id.toLowerCase().includes(searchLower);
+    const titleMatch = (issue.title || '').toLowerCase().includes(searchLower);
+    const statusMatch = issue.status.toLowerCase().includes(searchLower);
+    const typeMatch = (issue.issue_type || '').toLowerCase().includes(searchLower);
+    const priorityLabel = PRIORITY_LABELS[issue.priority] || '';
+    const priorityMatch = priorityLabel.toLowerCase().includes(searchLower);
+
+    return idMatch || titleMatch || statusMatch || typeMatch || priorityMatch;
+  });
+
+  // Group issues by status (with optimistic updates and filter applied)
   const issuesByStatus = columnOrder.reduce((acc, status) => {
-    acc[status] = issuesWithOptimisticUpdates.filter(issue => issue.status === status);
+    acc[status] = filteredIssues.filter(issue => issue.status === status);
     return acc;
   }, {} as Record<IssueStatus, Issue[]>);
 
   // Log any issues that don't appear in any column
   const issuesInColumns = Object.values(issuesByStatus).flat();
-  const missingIssues = issuesWithOptimisticUpdates.filter(
+  const missingIssues = filteredIssues.filter(
     issue => !issuesInColumns.some(i => i.id === issue.id)
   );
   if (missingIssues.length > 0) {
     console.log(`[Grouping] Issues not in any column:`, missingIssues.map(i => ({ id: i.id.substring(0, 20), status: i.status })));
   }
+
+  // Calculate filtered count
+  const totalIssues = issues.length;
+  const filteredCount = filteredIssues.length;
 
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
@@ -219,6 +251,34 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
 
   return (
     <>
+      {/* Search Filter */}
+      <div className="mb-4 p-4 bg-white rounded-lg border border-slate-200">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Filter cards by title, ID, status, type, or priority..."
+            className="w-full pl-10 pr-10 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+          />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          {filterText && (
+            <button
+              onClick={() => setFilterText('')}
+              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label="Clear filter"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        {filterText && (
+          <div className="mt-2 text-xs text-slate-600">
+            Showing {filteredCount} of {totalIssues} cards
+          </div>
+        )}
+      </div>
+
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
