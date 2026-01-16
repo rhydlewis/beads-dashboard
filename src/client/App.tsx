@@ -4,13 +4,17 @@ import type { Issue, TimeGranularity } from '@shared/types';
 import { useMetrics } from '@/hooks/useMetrics';
 import DashboardView from '@/components/DashboardView';
 import TableView from '@/components/TableView';
+import { AgingAlertBadge } from '@/components/AgingAlertBadge';
+import { AgingAlertList } from '@/components/AgingAlertList';
 import KanbanBoard from '@/components/KanbanBoard';
+import { AgingThresholdConfig } from '@/components/AgingThresholdConfig';
+import { AgingThresholdConfig as AgingThresholdConfigType, loadThresholdConfig } from '@/utils/agingAlerts';
 
 function App() {
   const [parsedIssues, setParsedIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'table' | 'board' | 'dashboard'>(() => {
+  const [activeTab, setActiveTab] = useState<'table' | 'board' | 'dashboard' | 'aging'>('table');
     const saved = localStorage.getItem('beads-active-tab');
     return (saved as 'table' | 'board' | 'dashboard') || 'table';
   });
@@ -19,6 +23,8 @@ function App() {
     const saved = localStorage.getItem('beads-granularity');
     return (saved as TimeGranularity) || 'daily';
   });
+  const [thresholdConfig, setThresholdConfig] = useState<AgingThresholdConfigType>(() => loadThresholdConfig());
+  const [showConfigModal, setShowConfigModal] = useState(false);
 
   const metrics = useMetrics(parsedIssues, granularity);
 
@@ -94,7 +100,7 @@ function App() {
         {/* Tabs */}
         <div className="flex space-x-4 border-b border-slate-200">
           <button
-            className={`pb-2 px-1 text-sm font-medium ${
+            className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
               activeTab === 'table'
                 ? 'border-b-2 border-blue-500 text-blue-600'
                 : 'text-slate-500 hover:text-slate-700'
@@ -104,7 +110,7 @@ function App() {
             All Issues
           </button>
           <button
-            className={`pb-2 px-1 text-sm font-medium ${
+            className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
               activeTab === 'board'
                 ? 'border-b-2 border-blue-500 text-blue-600'
                 : 'text-slate-500 hover:text-slate-700'
@@ -123,6 +129,16 @@ function App() {
           >
             Dashboard
           </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
+              activeTab === 'aging'
+                ? 'border-b-2 border-blue-500 text-blue-600'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+            onClick={() => setActiveTab('aging')}
+          >
+            Aging Items
+          </button>
         </div>
       </header>
 
@@ -138,11 +154,35 @@ function App() {
         <TableView issues={parsedIssues} onRefresh={fetchData} />
       ) : activeTab === 'board' ? (
         <KanbanBoard issues={parsedIssues} />
-      ) : (
+      ) : activeTab === 'dashboard' ? (
         <DashboardView
           metrics={metrics}
           granularity={granularity}
           onGranularityChange={setGranularity}
+        />
+      ) : (
+        <AgingAlertList
+          issues={parsedIssues}
+          onConfigureClick={() => setShowConfigModal(true)}
+        />
+      )}
+
+      {/* Aging Alert Badge in header */}
+      <AgingAlertBadge
+        issues={parsedIssues}
+        onConfigureClick={() => setShowConfigModal(true)}
+      />
+
+      {/* Configuration Modal */}
+      {showConfigModal && (
+        <AgingThresholdConfig
+          issues={parsedIssues}
+          onClose={() => setShowConfigModal(false)}
+          onSave={(newConfig) => {
+            setThresholdConfig(newConfig);
+            // Force re-render of components that depend on config
+            setShowConfigModal(false);
+          }}
         />
       )}
     </div>

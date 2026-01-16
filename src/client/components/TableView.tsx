@@ -23,6 +23,13 @@ import {
 import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
 import IssueViewModal from './IssueViewModal';
+import {
+  loadThresholdConfig,
+  classifyIssueAge,
+  getAgingStatusClass,
+  getIssueAgeHours,
+  formatAgeDisplay,
+} from '@/utils/agingAlerts';
 
 interface TableViewProps {
   issues: Issue[];
@@ -32,6 +39,11 @@ interface TableViewProps {
 function TableView({ issues, onRefresh }: TableViewProps) {
   const [filterText, setFilterText] = useState('');
   const [activeDescription, setActiveDescription] = useState<Issue | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [thresholdConfig] = useState(() => loadThresholdConfig());
+  const [today] = useState(() => new Date());
 
   // Column filters with localStorage persistence
   const [statusFilter, setStatusFilter] = useState<IssueStatus[]>(() => {
@@ -449,7 +461,6 @@ function TableView({ issues, onRefresh }: TableViewProps) {
                 const created = new Date(issue.created_at);
                 const updated = issue.updated_at ? new Date(issue.updated_at) : null;
                 const isClosed = issue.status === 'closed';
-                const today = new Date();
                 const ageInDays = Math.floor((today.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
                 const isStale = !isClosed && ageInDays > 30;
 
@@ -470,8 +481,14 @@ function TableView({ issues, onRefresh }: TableViewProps) {
                 const shortId = issue.id.includes('-') ? issue.id.split('-').pop() : issue.id;
                 const typeInfo = getTypeInfo(issue.issue_type);
 
+                // Calculate aging status
+                const agingStatus = classifyIssueAge(issue, thresholdConfig, today);
+                const agingClass = getAgingStatusClass(agingStatus);
+                const ageHours = getIssueAgeHours(issue, today);
+                const ageDisplay = formatAgeDisplay(ageHours);
+
                 return (
-                  <tr key={issue.id} className="hover:bg-slate-50 group">
+                  <tr key={issue.id} className={`hover:bg-slate-50 group ${agingClass}`}>
                     <td className="px-6 py-3 font-mono text-slate-500 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <span>{shortId}</span>
@@ -569,7 +586,18 @@ function TableView({ issues, onRefresh }: TableViewProps) {
                     <td className="px-6 py-3 text-slate-500">{created.toLocaleDateString()}</td>
                     <td className="px-6 py-3 text-slate-500">{updated ? updated.toLocaleDateString() : '-'}</td>
                     <td className="px-6 py-3 text-slate-500">{cycleTime}</td>
-                    <td className={`px-6 py-3 ${isStale ? 'text-red-600 font-bold' : 'text-slate-500'}`}>{age}</td>
+                    <td className={`px-6 py-3 ${agingStatus === 'critical' ? 'text-red-600 font-bold' : agingStatus === 'warning' ? 'text-yellow-600 font-medium' : 'text-slate-500'}`}>
+                  {agingStatus === 'normal' ? age : (
+                    <div className="flex items-center gap-1">
+                      {agingStatus === 'critical' ? (
+                        <AlertOctagon className="w-3.5 h-3.5" />
+                      ) : (
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                      )}
+                      <span>{ageDisplay}</span>
+                    </div>
+                  )}
+                </td>
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-2">
                         {issue.status !== 'closed' && issue.status !== 'in_progress' && (
