@@ -95,6 +95,9 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
   // Apply optimistic updates to issues
   const issuesWithOptimisticUpdates = issues.map(issue => {
     const optimisticStatus = optimisticStatusUpdates[issue.id];
+    if (optimisticStatus) {
+      console.log(`[Grouping] Applying optimistic update: ${issue.id.substring(0, 20)}... → ${optimisticStatus} (original: ${issue.status})`);
+    }
     return optimisticStatus ? { ...issue, status: optimisticStatus } : issue;
   });
 
@@ -103,6 +106,15 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
     acc[status] = issuesWithOptimisticUpdates.filter(issue => issue.status === status);
     return acc;
   }, {} as Record<IssueStatus, Issue[]>);
+
+  // Log any issues that don't appear in any column
+  const issuesInColumns = Object.values(issuesByStatus).flat();
+  const missingIssues = issuesWithOptimisticUpdates.filter(
+    issue => !issuesInColumns.some(i => i.id === issue.id)
+  );
+  if (missingIssues.length > 0) {
+    console.log(`[Grouping] Issues not in any column:`, missingIssues.map(i => ({ id: i.id.substring(0, 20), status: i.status })));
+  }
 
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
@@ -122,7 +134,23 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
     }
 
     const issueId = active.id as string;
-    const newStatus = over.id as IssueStatus;
+    let newStatus: IssueStatus;
+
+    // Check if we dropped on a column (over.id is a status) or on a card (over.id is an issue ID)
+    if (columnOrder.includes(over.id as IssueStatus)) {
+      // Dropped on column - use the status directly
+      newStatus = over.id as IssueStatus;
+    } else {
+      // Dropped on a card - find which column that card is in
+      const targetIssue = issues.find(i => i.id === over.id);
+      if (!targetIssue) {
+        console.warn(`[Drag] Could not find target issue ${over.id}`);
+        return;
+      }
+      newStatus = targetIssue.status;
+      console.log(`[Drag] Dropped on card ${over.id.substring(0, 20)}... in column ${newStatus}`);
+    }
+
     const issue = issues.find(i => i.id === issueId);
 
     if (!issue || issue.status === newStatus) {
