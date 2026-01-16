@@ -8,6 +8,8 @@ Beads Performance Dashboard is a local, real-time lean metrics dashboard for the
 
 Built with **TypeScript, Vite, React 18, and Vitest**, the dashboard provides type-safe code, fast HMR development, and comprehensive unit test coverage for critical business logic.
 
+Use https://steveyegge.github.io/beads/llms.txt for more detailed reference on how to use beads.
+
 ## Common Commands
 
 ### Development
