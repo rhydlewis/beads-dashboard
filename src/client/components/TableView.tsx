@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { marked } from 'marked';
 import {
   AlertOctagon,
   AlertTriangle,
@@ -9,8 +8,6 @@ import {
   ArrowUp,
   Copy,
   PanelTopOpen,
-  X,
-  Edit2,
   Bug,
   Box,
   Boxes,
@@ -25,17 +22,16 @@ import {
 } from 'lucide-react';
 import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
+import IssueViewModal from './IssueViewModal';
 
 interface TableViewProps {
   issues: Issue[];
+  onRefresh: () => void;
 }
 
-function TableView({ issues }: TableViewProps) {
+function TableView({ issues, onRefresh }: TableViewProps) {
   const [filterText, setFilterText] = useState('');
   const [activeDescription, setActiveDescription] = useState<Issue | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState('');
-  const [saving, setSaving] = useState(false);
 
   // Column filters with localStorage persistence
   const [statusFilter, setStatusFilter] = useState<IssueStatus[]>(() => {
@@ -234,32 +230,10 @@ function TableView({ issues }: TableViewProps) {
 
   const openDescription = (issue: Issue) => {
     setActiveDescription(issue);
-    setEditValue(issue.description || '');
-    setIsEditing(false);
   };
 
   const closeDescription = () => {
     setActiveDescription(null);
-    setIsEditing(false);
-    setSaving(false);
-  };
-
-  const handleSave = async () => {
-    if (!activeDescription) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/issues/${activeDescription.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: editValue }),
-      });
-      if (!res.ok) throw new Error('Failed to update');
-      closeDescription();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to save description');
-      setSaving(false);
-    }
   };
 
   const handleStatusUpdate = async (issueId: string, newStatus: IssueStatus) => {
@@ -637,79 +611,11 @@ function TableView({ issues }: TableViewProps) {
 
       {/* Description Modal */}
       {activeDescription && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-start p-6 border-b border-slate-100">
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">{activeDescription.title}</h3>
-                <p className="text-sm text-slate-500 font-mono mt-1">{activeDescription.id}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {!isEditing && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="text-slate-400 hover:text-blue-600 transition-colors p-1"
-                    title="Edit Description"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                )}
-                <button
-                  onClick={closeDescription}
-                  className="text-slate-400 hover:text-slate-600 transition-colors p-1"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6 overflow-y-auto flex-1">
-              {isEditing ? (
-                <textarea
-                  className="w-full h-64 p-3 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  placeholder="Enter issue description..."
-                />
-              ) : activeDescription.description ? (
-                <div
-                  className="prose prose-sm max-w-none text-slate-700"
-                  dangerouslySetInnerHTML={{ __html: marked.parse(activeDescription.description) }}
-                />
-              ) : (
-                <div className="text-slate-400 italic text-center py-8">
-                  ⚠️ No description provided for this issue.
-                </div>
-              )}
-            </div>
-            <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-lg flex justify-end gap-3">
-              {isEditing ? (
-                <>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors"
-                    disabled={saving}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
-                    disabled={saving}
-                  >
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={closeDescription}
-                  className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors"
-                >
-                  Close
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <IssueViewModal 
+          issue={activeDescription} 
+          onClose={closeDescription} 
+          onUpdate={onRefresh}
+        />
       )}
     </>
   );
