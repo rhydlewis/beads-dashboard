@@ -12,6 +12,7 @@ import {
   ListCheck,
   User,
   Bot,
+  Info,
 } from 'lucide-react';
 import type { Issue, Priority } from '@shared/types';
 
@@ -107,15 +108,26 @@ function KanbanCard({ issue, onClick }: KanbanCardProps) {
       style={style}
       {...attributes}
       {...listeners}
-      onClick={onClick}
       className={`bg-white rounded-lg border-l-4 ${getPriorityColor(issue.priority)} shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing p-3 mb-2`}
     >
-      {/* Header: ID + Priority */}
+      {/* Header: ID + Priority + Info Button */}
       <div className="flex items-start justify-between mb-2">
         <span className="text-xs font-mono text-slate-500">{shortId}</span>
-        <div className="flex items-center gap-1 text-slate-400">
-          {getPriorityIcon(issue.priority)}
-          {getTypeIcon(issue.issue_type)}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 text-slate-400">
+            {getPriorityIcon(issue.priority)}
+            {getTypeIcon(issue.issue_type)}
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick();
+            }}
+            className="text-slate-400 hover:text-blue-600 transition-colors p-0.5 cursor-pointer"
+            title="View details"
+          >
+            <Info className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 

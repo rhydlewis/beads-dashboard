@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -27,6 +27,14 @@ function KanbanBoard({ issues }: KanbanBoardProps) {
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Optimistic updates - track status changes before they're persisted
+  const [optimisticStatusUpdates, setOptimisticStatusUpdates] = useState<Record<string, IssueStatus>>({});
+
+  // Clear optimistic updates when real data arrives
+  useEffect(() => {
+    setOptimisticStatusUpdates({});
+  }, [issues]);
+
   // Configure sensors for both mouse and touch
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -52,9 +60,15 @@ function KanbanBoard({ issues }: KanbanBoardProps) {
     'tombstone',
   ];
 
-  // Group issues by status
+  // Apply optimistic updates to issues
+  const issuesWithOptimisticUpdates = issues.map(issue => {
+    const optimisticStatus = optimisticStatusUpdates[issue.id];
+    return optimisticStatus ? { ...issue, status: optimisticStatus } : issue;
+  });
+
+  // Group issues by status (with optimistic updates applied)
   const issuesByStatus = columnOrder.reduce((acc, status) => {
-    acc[status] = issues.filter(issue => issue.status === status);
+    acc[status] = issuesWithOptimisticUpdates.filter(issue => issue.status === status);
     return acc;
   }, {} as Record<IssueStatus, Issue[]>);
 
@@ -83,7 +97,8 @@ function KanbanBoard({ issues }: KanbanBoardProps) {
       return;
     }
 
-    // Optimistically update UI
+    // Optimistically update UI immediately
+    setOptimisticStatusUpdates(prev => ({ ...prev, [issueId]: newStatus }));
     setUpdatingStatus(issueId);
 
     try {
@@ -97,9 +112,24 @@ function KanbanBoard({ issues }: KanbanBoardProps) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to update status');
       }
+
+      // Success - clear optimistic update after a short delay to let socket refresh arrive
+      setTimeout(() => {
+        setOptimisticStatusUpdates(prev => {
+          const next = { ...prev };
+          delete next[issueId];
+          return next;
+        });
+      }, 1000);
     } catch (err) {
       console.error(err);
       alert(`Failed to update status: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      // Revert optimistic update on error
+      setOptimisticStatusUpdates(prev => {
+        const next = { ...prev };
+        delete next[issueId];
+        return next;
+      });
     } finally {
       setUpdatingStatus(null);
     }

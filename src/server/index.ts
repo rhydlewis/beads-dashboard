@@ -57,14 +57,25 @@ console.log(`Watching directory: ${projectRoot}`);
 const beadsDir = path.join(projectRoot, '.beads');
 
 if (beadsDirectoryExists(projectRoot)) {
+  console.log(`Setting up file watcher for: ${beadsDir}`);
   const watcher = chokidar.watch(beadsDir, {
-    ignored: /(^|[\/\\])\../, // ignore dotfiles
+    // Don't ignore files inside .beads directory
+    ignored: /(^|[\/\\])\.\./,  // only ignore parent directory references
     persistent: true,
+    ignoreInitial: false,
+  });
+
+  watcher.on('ready', () => {
+    console.log('File watcher ready');
   });
 
   watcher.on('all', (event, filePath) => {
     console.log(`File ${event}: ${filePath}`);
     io.emit('refresh');
+  });
+
+  watcher.on('error', (error) => {
+    console.error('Watcher error:', error);
   });
 } else {
   console.log(`No .beads directory found at ${beadsDir}. Waiting for it to be created...`);
