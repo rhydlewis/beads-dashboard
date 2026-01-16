@@ -32,6 +32,14 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
     return saved || '';
   });
 
+  // Auto-hide settings for Done column
+  const [autoHideDays, setAutoHideDays] = useState<number | null>(() => {
+    const saved = localStorage.getItem('beads-done-auto-hide-days');
+    return saved ? parseInt(saved, 10) : null;
+  });
+
+  const [showAllDone, setShowAllDone] = useState<boolean>(false);
+
   // Optimistic updates - track status changes before they're persisted
   const [optimisticStatusUpdates, setOptimisticStatusUpdates] = useState<Record<string, IssueStatus>>({});
 
@@ -39,6 +47,15 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
   useEffect(() => {
     localStorage.setItem('beads-kanban-filter', filterText);
   }, [filterText]);
+
+  // Persist auto-hide days to localStorage
+  useEffect(() => {
+    if (autoHideDays === null) {
+      localStorage.removeItem('beads-done-auto-hide-days');
+    } else {
+      localStorage.setItem('beads-done-auto-hide-days', autoHideDays.toString());
+    }
+  }, [autoHideDays]);
 
   // Clear optimistic updates only when they're reflected in real data
   useEffect(() => {
@@ -131,9 +148,29 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
     return idMatch || titleMatch || statusMatch || typeMatch || priorityMatch;
   });
 
-  // Group issues by status (with optimistic updates and filter applied)
+  // Apply auto-hide filter for closed issues (unless showAllDone is true)
+  const today = new Date();
+  const visibleIssues = filteredIssues.filter(issue => {
+    // Only filter closed issues if auto-hide is enabled and not showing all
+    if (issue.status === 'closed' && autoHideDays !== null && !showAllDone) {
+      if (!issue.closed_at) return true; // Keep if no closed_at date
+
+      const closedDate = new Date(issue.closed_at);
+      const daysSinceClosed = (today.getTime() - closedDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      return daysSinceClosed <= autoHideDays;
+    }
+    return true;
+  });
+
+  // Calculate hidden count for closed column
+  const allClosedIssues = filteredIssues.filter(issue => issue.status === 'closed');
+  const visibleClosedIssues = visibleIssues.filter(issue => issue.status === 'closed');
+  const hiddenClosedCount = allClosedIssues.length - visibleClosedIssues.length;
+
+  // Group issues by status (with optimistic updates and all filters applied)
   const issuesByStatus = columnOrder.reduce((acc, status) => {
-    acc[status] = filteredIssues.filter(issue => issue.status === status);
+    acc[status] = visibleIssues.filter(issue => issue.status === status);
     return acc;
   }, {} as Record<IssueStatus, Issue[]>);
 
@@ -295,6 +332,11 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
                 issues={issuesByStatus[status] || []}
                 onCardClick={handleCardClick}
                 wipLimit={wipLimits[status]}
+                autoHideDays={status === 'closed' ? autoHideDays : undefined}
+                onAutoHideDaysChange={status === 'closed' ? setAutoHideDays : undefined}
+                hiddenCount={status === 'closed' ? hiddenClosedCount : undefined}
+                showAllHidden={status === 'closed' ? showAllDone : undefined}
+                onShowAllHiddenToggle={status === 'closed' ? setShowAllDone : undefined}
               />
             ))}
           </div>
