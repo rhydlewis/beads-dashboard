@@ -39,6 +39,8 @@ export interface Issue {
   id: string;
   title: string;
   description?: string;
+  design?: string;
+  acceptance_criteria?: string;
   status: IssueStatus;
   issue_type: IssueType;
   priority: Priority;
@@ -104,6 +106,14 @@ export interface Metrics {
 // API request/response types
 export interface UpdateIssueDescriptionRequest {
   description: string;
+}
+
+export interface UpdateIssueDesignRequest {
+  design: string;
+}
+
+export interface UpdateIssueAcceptanceRequest {
+  acceptance_criteria: string;
 }
 
 export interface UpdateIssueStatusRequest {

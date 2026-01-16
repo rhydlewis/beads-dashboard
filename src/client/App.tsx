@@ -135,7 +135,7 @@ function App() {
           No issues found in .beads directory.
         </div>
       ) : activeTab === 'table' ? (
-        <TableView issues={parsedIssues} />
+        <TableView issues={parsedIssues} onRefresh={fetchData} />
       ) : activeTab === 'board' ? (
         <KanbanBoard issues={parsedIssues} />
       ) : (
