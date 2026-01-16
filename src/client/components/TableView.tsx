@@ -251,10 +251,19 @@ function TableView({ issues, onRefresh }: TableViewProps) {
   const handleStatusUpdate = async (issueId: string, newStatus: IssueStatus) => {
     setUpdatingStatus(issueId);
     try {
-      const res = await fetch(`/api/issues/${issueId}/status`, {
+      // Use different endpoint for closing vs status update
+      const endpoint = newStatus === 'closed'
+        ? `/api/issues/${issueId}/close`
+        : `/api/issues/${issueId}/status`;
+
+      const body = newStatus === 'closed'
+        ? {} // bd close doesn't need a body
+        : { status: newStatus };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const errorData = await res.json();
