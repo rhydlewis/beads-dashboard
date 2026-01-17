@@ -188,15 +188,12 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
     if (!resizingColumn) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const column = columnConfigs.find(c => c.key === resizingColumn);
-      if (!column) return;
-
       const delta = e.clientX - resizeStartX.current;
-      const newWidth = Math.max(column.minWidth, resizeStartWidth.current + delta);
+      const newWidth = Math.max(resizeStartWidth.current + delta, 50); // Minimum 50px
 
       setColumnConfigs(prev =>
         prev.map(col =>
-          col.key === resizingColumn ? { ...col, width: newWidth } : col
+          col.key === resizingColumn ? { ...col, width: Math.max(newWidth, col.minWidth) } : col
         )
       );
     };
@@ -212,7 +209,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [resizingColumn, columnConfigs]);
+  }, [resizingColumn]);
 
   const toggleColumnVisibility = (columnKey: string) => {
     setColumnConfigs(prev =>
