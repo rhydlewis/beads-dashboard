@@ -17,19 +17,28 @@ const args = minimist(process.argv.slice(2));
 const projectRoot = args._[0] || process.cwd();
 const PORT = args.port || 3001; // Changed from 3000 to 3001 for dev mode (Vite uses 3000)
 
+// Determine environment
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Create Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
+
+// Configure CORS based on environment
+const allowedOrigins = isProduction
+  ? (process.env.ALLOWED_ORIGINS?.split(',') || [])
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'];
+
 const io = new SocketIOServer(server, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
+    credentials: true,
   },
 });
 
 app.use(express.json());
 
 // Serve static files in production
-const isProduction = process.env.NODE_ENV === 'production';
 if (isProduction) {
   const distPath = path.join(__dirname, '../../client');
   console.log(`Serving static files from: ${distPath}`);
