@@ -15,7 +15,7 @@
   },
   "scripts": {
     "dev": "concurrently \"vite\" \"tsx src/server/index.ts\"",
-    "build": "npm run build:client && npm run build:server",
+    "build": "npm run typecheck && npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "tsc -p tsconfig.node.json",
     "preview": "vite preview",
