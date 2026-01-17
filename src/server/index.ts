@@ -53,14 +53,13 @@ console.log(`Starting Beads Dashboard Server...`);
 console.log(`Environment: ${isProduction ? 'production' : 'development'}`);
 console.log(`Watching directory: ${projectRoot}`);
 
-// Watch for changes in .beads directory
+// Watch for changes to beads.db (SQLite database)
 const beadsDir = path.join(projectRoot, '.beads');
+const beadsDbPath = path.join(beadsDir, 'beads.db');
 
 if (beadsDirectoryExists(projectRoot)) {
-  console.log(`Setting up file watcher for: ${beadsDir}`);
-  const watcher = chokidar.watch(beadsDir, {
-    // Don't ignore files inside .beads directory
-    ignored: /(^|[\/\\])\.\./,  // only ignore parent directory references
+  console.log(`Setting up file watcher for: ${beadsDbPath}`);
+  const watcher = chokidar.watch(beadsDbPath, {
     persistent: true,
     ignoreInitial: false,
   });
@@ -70,15 +69,9 @@ if (beadsDirectoryExists(projectRoot)) {
   });
 
   watcher.on('all', (event, filePath) => {
-    // Only emit refresh when the SQLite database changes
-    // This catches manual bd CLI updates outside the dashboard
-    const fileName = path.basename(filePath);
-    if (fileName === 'beads.db') {
-      console.log(`File ${event}: ${filePath} - database changed, emitting refresh`);
-      io.emit('refresh');
-    } else {
-      console.log(`File ${event}: ${filePath} - ignoring`);
-    }
+    // Database changed - this catches manual bd CLI updates outside the dashboard
+    console.log(`Database ${event}: ${filePath} - emitting refresh`);
+    io.emit('refresh');
   });
 
   watcher.on('error', (error) => {
