@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { X, Edit2, FileText, Palette, CheckSquare } from 'lucide-react';
 import type { Issue } from '@shared/types';
 
@@ -232,7 +233,9 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
               {getFieldValue(activeTab) ? (
                 <div
                   className="prose prose-sm max-w-none text-slate-700"
-                  dangerouslySetInnerHTML={{ __html: marked.parse(getFieldValue(activeTab)) }}
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(marked.parse(getFieldValue(activeTab)))
+                  }}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400">
