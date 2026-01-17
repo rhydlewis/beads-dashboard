@@ -234,7 +234,7 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
                 <div
                   className="prose prose-sm max-w-none text-slate-700"
                   dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(marked.parse(getFieldValue(activeTab)))
+                    __html: DOMPurify.sanitize(marked.parse(getFieldValue(activeTab)) as string)
                   }}
                 />
               ) : (

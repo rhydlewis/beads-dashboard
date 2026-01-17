@@ -267,7 +267,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
               <YAxis fontSize={12} />
               <Tooltip cursor={{ fill: '#f8fafc' }} />
               <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                {metrics.ageChartData.map((e, i) => (
+                {metrics.ageChartData.map((_, i) => (
                   <Cell
                     key={i}
                     fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444'][i]}

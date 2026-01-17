@@ -5,8 +5,6 @@ import {
   AgingThresholdConfig,
   countIssuesByAgingStatus,
   getAgingIssues,
-  formatAgeDisplay,
-  getIssueAgeHours,
 } from '@/utils/agingAlerts';
 import { extractShortId } from '@/utils/commonUtils';
 

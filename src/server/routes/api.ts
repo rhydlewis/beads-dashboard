@@ -49,7 +49,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       UpdateIssueDescriptionSchema.parse(req.body);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0].message });
+        return res.status(400).json({ error: error.issues[0].message });
       }
       return res.status(400).json({ error: 'Invalid request body' });
     }
@@ -114,7 +114,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       UpdateIssueStatusSchema.parse(req.body);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0].message });
+        return res.status(400).json({ error: error.issues[0].message });
       }
       return res.status(400).json({ error: 'Invalid request body' });
     }
@@ -195,7 +195,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       UpdateIssuePrioritySchema.parse(req.body);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0].message });
+        return res.status(400).json({ error: error.issues[0].message });
       }
       return res.status(400).json({ error: 'Invalid request body' });
     }
@@ -236,7 +236,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       UpdateIssueDesignSchema.parse(req.body);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0].message });
+        return res.status(400).json({ error: error.issues[0].message });
       }
       return res.status(400).json({ error: 'Invalid request body' });
     }
@@ -291,7 +291,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       UpdateIssueAcceptanceSchema.parse(req.body);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0].message });
+        return res.status(400).json({ error: error.issues[0].message });
       }
       return res.status(400).json({ error: 'Invalid request body' });
     }

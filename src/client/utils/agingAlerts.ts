@@ -1,4 +1,4 @@
-import type { Issue, TimeGranularity } from '@shared/types';
+import type { Issue } from '@shared/types';
 import { calculateAge, calculatePercentile } from './commonUtils';
 
 // Threshold configuration interface

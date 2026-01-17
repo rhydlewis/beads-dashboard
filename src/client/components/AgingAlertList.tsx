@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
-import { AlertTriangle, AlertOctagon, Clock, User, Bug, Box, Boxes, ListCheck, Filter, X } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, AlertOctagon, Clock, User, Bug, Box, Boxes, ListCheck, Filter } from 'lucide-react';
 import type { Issue } from '@shared/types';
 import {
   AgingThresholdConfig,
   getAgingIssues,
-  formatAgeDisplay,
-  getIssueAgeHours,
 } from '@/utils/agingAlerts';
 import { extractShortId } from '@/utils/commonUtils';
 

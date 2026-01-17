@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import type { Issue, TimeGranularity } from '@shared/types';
 import { useMetrics } from '@/hooks/useMetrics';
 import DashboardView from '@/components/DashboardView';
@@ -18,7 +18,6 @@ function App() {
     const saved = localStorage.getItem('beads-active-tab');
     return (saved as 'table' | 'board' | 'dashboard' | 'aging') || 'table';
   });
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [granularity, setGranularity] = useState<TimeGranularity>(() => {
     const saved = localStorage.getItem('beads-granularity');
     return (saved as TimeGranularity) || 'daily';
@@ -49,7 +48,6 @@ function App() {
     fetchData();
 
     const socketInstance = io();
-    setSocket(socketInstance);
 
     socketInstance.on('refresh', () => {
       console.log('[Socket] Received refresh event - reloading data');

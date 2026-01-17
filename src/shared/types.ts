@@ -46,6 +46,7 @@ export interface Issue {
   priority: Priority;
   created_at: string; // ISO 8601 timestamp
   updated_at?: string; // ISO 8601 timestamp
+  closed_at?: string; // ISO 8601 timestamp for when issue was closed
   assignee?: string;
   labels?: string[];
   dependencies?: string[]; // IDs of issues this depends on

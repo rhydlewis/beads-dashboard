@@ -23,7 +23,6 @@ interface KanbanBoardProps {
 
 function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
   const [activeIssue, setActiveIssue] = useState<Issue | null>(null);
-  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   // Filter text with localStorage persistence
@@ -219,7 +218,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
         return;
       }
       newStatus = targetIssue.status;
-      console.log(`[Drag] Dropped on card ${over.id.substring(0, 20)}... in column ${newStatus}`);
+      console.log(`[Drag] Dropped on card ${String(over.id).substring(0, 20)}... in column ${newStatus}`);
     }
 
     const issue = issues.find(i => i.id === issueId);
@@ -231,7 +230,6 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
     // Optimistically update UI immediately
     console.log(`[Drag] Creating optimistic update: ${issueId.substring(0, 20)}... → ${newStatus}`);
     setOptimisticStatusUpdates(prev => ({ ...prev, [issueId]: newStatus }));
-    setUpdatingStatus(issueId);
 
     try {
       console.log(`[Drag] Sending API request to update status`);
@@ -269,8 +267,6 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
         delete next[issueId];
         return next;
       });
-    } finally {
-      setUpdatingStatus(null);
     }
   };
 
