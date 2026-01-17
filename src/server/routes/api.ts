@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { exec, spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { readBeadsData } from '../utils/beadsReader.js';
 import type { 
   UpdateIssueDescriptionRequest, 
@@ -40,15 +41,21 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       return res.status(400).json({ error: 'Description is required' });
     }
 
-    // Write desc to temp file to avoid escaping issues
-    const tempFile = path.join(process.cwd(), `desc-${Date.now()}.txt`);
+    // Write description to temp file in OS temp directory to avoid escaping issues
+    // Use timestamp and process ID for uniqueness
+    const tempFile = path.join(os.tmpdir(), `beads-desc-${Date.now()}-${process.pid}.txt`);
 
     try {
-      fs.writeFileSync(tempFile, description);
+      fs.writeFileSync(tempFile, description, { mode: 0o600 }); // Secure file permissions
 
       await new Promise<void>((resolve, reject) => {
         exec(`bd update ${id} --body-file "${tempFile}"`, { cwd: projectRoot }, (error, _stdout, stderr) => {
-          fs.unlinkSync(tempFile); // cleanup
+          // Always cleanup temp file
+          try {
+            fs.unlinkSync(tempFile);
+          } catch (cleanupError) {
+            console.error('Failed to cleanup temp file:', cleanupError);
+          }
 
           if (error) {
             console.error(`exec error: ${error}`);
@@ -65,8 +72,12 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       emitRefresh();
     } catch (error) {
       // Clean up temp file if it still exists
-      if (fs.existsSync(tempFile)) {
-        fs.unlinkSync(tempFile);
+      try {
+        if (fs.existsSync(tempFile)) {
+          fs.unlinkSync(tempFile);
+        }
+      } catch (cleanupError) {
+        console.error('Failed to cleanup temp file on error:', cleanupError);
       }
 
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
