@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   AlertOctagon,
   AlertTriangle,
@@ -17,6 +17,10 @@ import {
   Play,
   Check,
   Search,
+  Settings,
+  Eye,
+  EyeOff,
+  GripVertical,
 } from 'lucide-react';
 import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
@@ -39,6 +43,28 @@ type SortColumn =
   | 'updated'
   | 'cycleTime'
   | 'age';
+
+interface ColumnConfig {
+  key: SortColumn | 'actions';
+  label: string;
+  visible: boolean;
+  width: number;
+  minWidth: number;
+  resizable: boolean;
+}
+
+const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
+  { key: 'id', label: 'ID', visible: true, width: 120, minWidth: 80, resizable: true },
+  { key: 'title', label: 'Title', visible: true, width: 300, minWidth: 150, resizable: true },
+  { key: 'type', label: 'Type', visible: true, width: 120, minWidth: 100, resizable: true },
+  { key: 'priority', label: 'Priority', visible: true, width: 140, minWidth: 120, resizable: true },
+  { key: 'status', label: 'Status', visible: true, width: 120, minWidth: 100, resizable: true },
+  { key: 'created', label: 'Created', visible: true, width: 120, minWidth: 100, resizable: true },
+  { key: 'updated', label: 'Updated', visible: true, width: 120, minWidth: 100, resizable: true },
+  { key: 'cycleTime', label: 'Cycle Time', visible: true, width: 100, minWidth: 80, resizable: true },
+  { key: 'age', label: 'Age', visible: true, width: 80, minWidth: 60, resizable: true },
+  { key: 'actions', label: 'Actions', visible: true, width: 120, minWidth: 100, resizable: false },
+];
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
@@ -89,6 +115,28 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
     direction: 'desc',
   }));
 
+  // Column configuration state
+  const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() => {
+    const saved = localStorage.getItem('beads-issues-column-config');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as ColumnConfig[];
+        // Merge with defaults to handle new columns
+        return DEFAULT_COLUMN_CONFIGS.map(defaultCol => {
+          const savedCol = parsed.find(c => c.key === defaultCol.key);
+          return savedCol ? { ...defaultCol, ...savedCol } : defaultCol;
+        });
+      } catch {
+        return DEFAULT_COLUMN_CONFIGS;
+      }
+    }
+    return DEFAULT_COLUMN_CONFIGS;
+  });
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const resizeStartX = useRef(0);
+  const resizeStartWidth = useRef(0);
+
   useEffect(() => {
     if (focusedEpicId) {
       setChildFilter(focusedEpicId);
@@ -110,12 +158,72 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
   }, [priorityFilter]);
 
   useEffect(() => {
-    const handleClickOutside = () => setOpenDropdown(null);
-    if (openDropdown) {
+    const handleClickOutside = () => {
+      setOpenDropdown(null);
+      setShowColumnMenu(false);
+    };
+    if (openDropdown || showColumnMenu) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [openDropdown]);
+  }, [openDropdown, showColumnMenu]);
+
+  // Persist column configuration
+  useEffect(() => {
+    localStorage.setItem('beads-issues-column-config', JSON.stringify(columnConfigs));
+  }, [columnConfigs]);
+
+  // Column resize handlers
+  const handleResizeStart = (columnKey: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const column = columnConfigs.find(c => c.key === columnKey);
+    if (!column) return;
+
+    setResizingColumn(columnKey);
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = column.width;
+  };
+
+  useEffect(() => {
+    if (!resizingColumn) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const column = columnConfigs.find(c => c.key === resizingColumn);
+      if (!column) return;
+
+      const delta = e.clientX - resizeStartX.current;
+      const newWidth = Math.max(column.minWidth, resizeStartWidth.current + delta);
+
+      setColumnConfigs(prev =>
+        prev.map(col =>
+          col.key === resizingColumn ? { ...col, width: newWidth } : col
+        )
+      );
+    };
+
+    const handleMouseUp = () => {
+      setResizingColumn(null);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [resizingColumn, columnConfigs]);
+
+  const toggleColumnVisibility = (columnKey: string) => {
+    setColumnConfigs(prev =>
+      prev.map(col =>
+        col.key === columnKey ? { ...col, visible: !col.visible } : col
+      )
+    );
+  };
+
+  const visibleColumns = columnConfigs.filter(c => c.visible);
 
   const nonEpicIssues = useMemo(() => issues.filter((issue) => issue.issue_type !== 'epic'), [issues]);
 
@@ -373,6 +481,112 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
 
   const focusedEpic = childFilter ? issues.find((issue) => issue.id === childFilter) : null;
 
+  // Get column style for td elements
+  const getColumnStyle = (key: SortColumn | 'actions') => {
+    const col = columnConfigs.find(c => c.key === key);
+    if (!col || !col.visible) return { display: 'none' };
+    return { width: `${col.width}px`, minWidth: `${col.minWidth}px` };
+  };
+
+  // Render column header with resize handle
+  const renderColumnHeader = (col: ColumnConfig) => {
+    const isSortable = col.key !== 'actions';
+    const content = (() => {
+      switch (col.key) {
+        case 'id':
+        case 'title':
+        case 'created':
+        case 'updated':
+        case 'cycleTime':
+        case 'age':
+          return (
+            <button className="flex items-center gap-1" onClick={() => isSortable && handleSort(col.key as SortColumn)}>
+              {col.label}
+              {isSortable && renderSortIndicator(col.key as SortColumn)}
+            </button>
+          );
+        case 'type':
+          return (
+            <div className="flex items-center">
+              <button className="flex items-center gap-1" onClick={() => handleSort('type')}>
+                {col.label}
+                {renderSortIndicator('type')}
+              </button>
+              <FilterDropdown
+                column="type"
+                values={uniqueTypes}
+                activeFilters={typeFilter}
+                openDropdown={openDropdown}
+                setOpenDropdown={setOpenDropdown}
+                onToggle={(value) => toggleFilterValue('type', value)}
+                onClear={() => clearFilter('type')}
+              />
+            </div>
+          );
+        case 'priority':
+          return (
+            <div className="flex items-center">
+              <button className="flex items-center gap-1" onClick={() => handleSort('priority')}>
+                {col.label}
+                {renderSortIndicator('priority')}
+              </button>
+              <FilterDropdown
+                column="priority"
+                values={uniquePriorities}
+                activeFilters={priorityFilter}
+                openDropdown={openDropdown}
+                setOpenDropdown={setOpenDropdown}
+                onToggle={(value) => toggleFilterValue('priority', value)}
+                onClear={() => clearFilter('priority')}
+                formatValue={(value) => PRIORITY_LABELS[value as Priority] || String(value)}
+              />
+            </div>
+          );
+        case 'status':
+          return (
+            <div className="flex items-center">
+              <button className="flex items-center gap-1" onClick={() => handleSort('status')}>
+                {col.label}
+                {renderSortIndicator('status')}
+              </button>
+              <FilterDropdown
+                column="status"
+                values={uniqueStatuses}
+                activeFilters={statusFilter}
+                openDropdown={openDropdown}
+                setOpenDropdown={setOpenDropdown}
+                onToggle={(value) => toggleFilterValue('status', value)}
+                onClear={() => clearFilter('status')}
+              />
+            </div>
+          );
+        case 'actions':
+          return col.label;
+        default:
+          return col.label;
+      }
+    })();
+
+    return (
+      <th
+        key={col.key}
+        className="px-6 py-3 relative group"
+        style={{ width: `${col.width}px`, minWidth: `${col.minWidth}px` }}
+      >
+        {content}
+        {col.resizable && (
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 group-hover:bg-blue-300 opacity-0 group-hover:opacity-100 transition-opacity"
+            onMouseDown={(e) => handleResizeStart(col.key, e)}
+            title="Drag to resize column"
+          >
+            <GripVertical className="w-3 h-3 text-blue-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100" />
+          </div>
+        )}
+      </th>
+    );
+  };
+
   return (
     <>
       <div className="card overflow-hidden">
@@ -421,99 +635,47 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
           </div>
         )}
 
+        <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-end relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowColumnMenu(!showColumnMenu);
+            }}
+            className="text-xs text-slate-600 hover:text-slate-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 transition-colors"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            Columns
+          </button>
+          {showColumnMenu && (
+            <div className="absolute right-4 top-10 z-50 bg-white border border-slate-200 rounded-lg shadow-lg min-w-48 py-1">
+              {columnConfigs.map((col) => (
+                <button
+                  key={col.key}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleColumnVisibility(col.key);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                >
+                  {col.visible ? (
+                    <Eye className="w-4 h-4 text-blue-500" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-slate-300" />
+                  )}
+                  <span className={col.visible ? 'text-slate-700' : 'text-slate-400'}>
+                    {col.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-600 font-medium border-b">
               <tr>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('id')}>
-                    ID
-                    {renderSortIndicator('id')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('title')}>
-                    Title
-                    {renderSortIndicator('title')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <div className="flex items-center">
-                    <button className="flex items-center gap-1" onClick={() => handleSort('type')}>
-                      Type
-                      {renderSortIndicator('type')}
-                    </button>
-                    <FilterDropdown
-                      column="type"
-                      values={uniqueTypes}
-                      activeFilters={typeFilter}
-                      openDropdown={openDropdown}
-                      setOpenDropdown={setOpenDropdown}
-                      onToggle={(value) => toggleFilterValue('type', value)}
-                      onClear={() => clearFilter('type')}
-                    />
-                  </div>
-                </th>
-                <th className="px-6 py-3">
-                  <div className="flex items-center">
-                    <button className="flex items-center gap-1" onClick={() => handleSort('priority')}>
-                      Priority
-                      {renderSortIndicator('priority')}
-                    </button>
-                    <FilterDropdown
-                      column="priority"
-                      values={uniquePriorities}
-                      activeFilters={priorityFilter}
-                      openDropdown={openDropdown}
-                      setOpenDropdown={setOpenDropdown}
-                      onToggle={(value) => toggleFilterValue('priority', value)}
-                      onClear={() => clearFilter('priority')}
-                      formatValue={(value) => PRIORITY_LABELS[value as Priority] || String(value)}
-                    />
-                  </div>
-                </th>
-                <th className="px-6 py-3">
-                  <div className="flex items-center">
-                    <button className="flex items-center gap-1" onClick={() => handleSort('status')}>
-                      Status
-                      {renderSortIndicator('status')}
-                    </button>
-                    <FilterDropdown
-                      column="status"
-                      values={uniqueStatuses}
-                      activeFilters={statusFilter}
-                      openDropdown={openDropdown}
-                      setOpenDropdown={setOpenDropdown}
-                      onToggle={(value) => toggleFilterValue('status', value)}
-                      onClear={() => clearFilter('status')}
-                    />
-                  </div>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('created')}>
-                    Created
-                    {renderSortIndicator('created')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('updated')}>
-                    Updated
-                    {renderSortIndicator('updated')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('cycleTime')}>
-                    Cycle Time
-                    {renderSortIndicator('cycleTime')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('age')}>
-                    Age
-                    {renderSortIndicator('age')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">Actions</th>
+                {visibleColumns.map(renderColumnHeader)}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -541,7 +703,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                         <span>{shortId}</span>
                         <button
                           onClick={() => handleCopy(issue.id)}
-                          className="text-slate-300 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
+                          style={getColumnStyle("title")} className="text-slate-300 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
                           title="Copy full ID"
                         >
                           <Copy className="w-3.5 h-3.5" />
@@ -553,7 +715,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                         <span>{issue.title || 'Untitled'}</span>
                         <button
                           onClick={() => openDescription(issue)}
-                          className="ml-auto text-slate-300 hover:text-blue-600 transition-colors"
+                          style={getColumnStyle("type")} className="ml-auto text-slate-300 hover:text-blue-600 transition-colors"
                           title="View Description"
                         >
                           <PanelTopOpen className="w-3.5 h-3.5" />
@@ -672,7 +834,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
               })}
               {sortedIssues.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-6 py-8 text-center text-slate-400">
+                  <td colSpan={visibleColumns.length} className="px-6 py-8 text-center text-slate-400">
                     No issues found{filterText ? ` matching "${filterText}"` : ''}
                   </td>
                 </tr>
