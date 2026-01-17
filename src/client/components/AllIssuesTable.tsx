@@ -20,7 +20,6 @@ import {
   Settings,
   Eye,
   EyeOff,
-  GripVertical,
 } from 'lucide-react';
 import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
@@ -481,11 +480,11 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
 
   const focusedEpic = childFilter ? issues.find((issue) => issue.id === childFilter) : null;
 
-  // Get column style for td elements
+  // Get column style for td elements (only handles visibility, widths come from th)
   const getColumnStyle = (key: SortColumn | 'actions') => {
     const col = columnConfigs.find(c => c.key === key);
     if (!col || !col.visible) return { display: 'none' };
-    return { width: `${col.width}px`, minWidth: `${col.minWidth}px` };
+    return {};
   };
 
   // Render column header with resize handle
@@ -576,12 +575,11 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
         {content}
         {col.resizable && (
           <div
-            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 group-hover:bg-blue-300 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 group-hover:bg-blue-200 transition-colors"
             onMouseDown={(e) => handleResizeStart(col.key, e)}
             title="Drag to resize column"
-          >
-            <GripVertical className="w-3 h-3 text-blue-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100" />
-          </div>
+            style={{ marginRight: '-4px' }}
+          />
         )}
       </th>
     );
@@ -672,7 +670,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm text-left">
+          <table className="min-w-full text-sm text-left" style={{ tableLayout: 'fixed' }}>
             <thead className="bg-slate-50 text-slate-600 font-medium border-b">
               <tr>
                 {visibleColumns.map(renderColumnHeader)}
