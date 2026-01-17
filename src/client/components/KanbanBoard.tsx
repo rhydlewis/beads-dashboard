@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -42,6 +42,12 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
   // Optimistic updates - track status changes before they're persisted
   const [optimisticStatusUpdates, setOptimisticStatusUpdates] = useState<Record<string, IssueStatus>>({});
 
+  // Filter out epics (their status is auto-managed by beads based on children)
+  const nonEpicIssues = useMemo(() =>
+    issues.filter(issue => issue.issue_type !== 'epic'),
+    [issues]
+  );
+
   // Persist filter text to localStorage
   useEffect(() => {
     localStorage.setItem('beads-kanban-filter', filterText);
@@ -58,7 +64,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
 
   // Clear optimistic updates only when they're reflected in real data
   useEffect(() => {
-    console.log(`[useEffect] Issues changed, checking optimistic updates. Issues count: ${issues.length}`);
+    console.log(`[useEffect] Issues changed, checking optimistic updates. Issues count: ${nonEpicIssues.length}`);
 
     setOptimisticStatusUpdates(prev => {
       const next = { ...prev };
@@ -73,7 +79,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
 
       // For each optimistic update, check if it's now in the real data
       Object.keys(next).forEach(issueId => {
-        const issue = issues.find(i => i.id === issueId);
+        const issue = nonEpicIssues.find(i => i.id === issueId);
         const optimisticStatus = next[issueId];
         const realStatus = issue?.status;
 
@@ -94,7 +100,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
       console.log(`[Optimistic Updates] Active count after check: ${Object.keys(next).length}`);
       return next;
     });
-  }, [issues]);
+  }, [nonEpicIssues]);
 
   // Configure sensors for both mouse and touch
   const sensors = useSensors(
@@ -123,7 +129,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
   ];
 
   // Apply optimistic updates to issues
-  const issuesWithOptimisticUpdates = issues.map(issue => {
+  const issuesWithOptimisticUpdates = nonEpicIssues.map(issue => {
     const optimisticStatus = optimisticStatusUpdates[issue.id];
     if (optimisticStatus) {
       console.log(`[Grouping] Applying optimistic update: ${issue.id.substring(0, 20)}... → ${optimisticStatus} (original: ${issue.status})`);
@@ -182,12 +188,12 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
   }
 
   // Calculate filtered count
-  const totalIssues = issues.length;
+  const totalIssues = nonEpicIssues.length;
   const filteredCount = filteredIssues.length;
 
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
-    const issue = issues.find(i => i.id === event.active.id);
+    const issue = nonEpicIssues.find(i => i.id === event.active.id);
     if (issue) {
       setActiveIssue(issue);
     }
@@ -211,7 +217,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
       newStatus = over.id as IssueStatus;
     } else {
       // Dropped on a card - find which column that card is in
-      const targetIssue = issues.find(i => i.id === over.id);
+      const targetIssue = nonEpicIssues.find(i => i.id === over.id);
       if (!targetIssue) {
         console.warn(`[Drag] Could not find target issue ${over.id}`);
         return;
@@ -220,7 +226,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
       console.log(`[Drag] Dropped on card ${String(over.id).substring(0, 20)}... in column ${newStatus}`);
     }
 
-    const issue = issues.find(i => i.id === issueId);
+    const issue = nonEpicIssues.find(i => i.id === issueId);
 
     if (!issue || issue.status === newStatus) {
       return;
