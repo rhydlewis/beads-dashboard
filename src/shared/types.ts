@@ -47,6 +47,7 @@ export interface Issue {
   created_at: string; // ISO 8601 timestamp
   updated_at?: string; // ISO 8601 timestamp
   closed_at?: string; // ISO 8601 timestamp for when issue was closed
+  parent_id?: string; // ID of parent epic (for child issues)
   assignee?: string;
   labels?: string[];
   dependencies?: string[]; // IDs of issues this depends on

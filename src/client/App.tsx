@@ -169,8 +169,6 @@ function App() {
       ) : activeTab === 'table' ? (
         <TableView
           issues={parsedIssues}
-          onRefresh={fetchData}
-          thresholdConfig={thresholdConfig}
         />
       ) : activeTab === 'board' ? (
         <KanbanBoard issues={parsedIssues} onRefresh={fetchData} />
