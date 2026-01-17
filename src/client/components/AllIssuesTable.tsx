@@ -176,14 +176,9 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
   const handleResizeStart = (columnKey: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[Resize] Starting resize for column:', columnKey);
     const column = columnConfigs.find(c => c.key === columnKey);
-    if (!column) {
-      console.log('[Resize] Column not found!');
-      return;
-    }
+    if (!column) return;
 
-    console.log('[Resize] Starting width:', column.width, 'at X:', e.clientX);
     setResizingColumn(columnKey);
     resizeStartX.current = e.clientX;
     resizeStartWidth.current = column.width;
@@ -192,30 +187,18 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
   useEffect(() => {
     if (!resizingColumn) return;
 
-    console.log('[Resize] Effect running for column:', resizingColumn);
-    console.log('[Resize] Start values - X:', resizeStartX.current, 'Width:', resizeStartWidth.current);
-
     const handleMouseMove = (e: MouseEvent) => {
       const delta = e.clientX - resizeStartX.current;
-      const newWidth = Math.max(resizeStartWidth.current + delta, 50); // Minimum 50px
+      const newWidth = Math.max(resizeStartWidth.current + delta, 50);
 
-      console.log('[Resize] Mouse move - clientX:', e.clientX, 'delta:', delta, 'newWidth:', newWidth);
-
-      setColumnConfigs(prev => {
-        const updated = prev.map(col => {
-          if (col.key === resizingColumn) {
-            const updatedCol = { ...col, width: Math.max(newWidth, col.minWidth) };
-            console.log('[Resize] Updating column', col.key, 'from', col.width, 'to', updatedCol.width);
-            return updatedCol;
-          }
-          return col;
-        });
-        return updated;
-      });
+      setColumnConfigs(prev =>
+        prev.map(col =>
+          col.key === resizingColumn ? { ...col, width: Math.max(newWidth, col.minWidth) } : col
+        )
+      );
     };
 
     const handleMouseUp = () => {
-      console.log('[Resize] Mouse up - ending resize');
       setResizingColumn(null);
     };
 
@@ -223,7 +206,6 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
     document.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      console.log('[Resize] Cleanup - removing listeners');
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -582,7 +564,6 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
       }
     })();
 
-    console.log('[Render] Rendering header for', col.key, 'with width:', col.width);
     return (
       <th
         key={col.key}

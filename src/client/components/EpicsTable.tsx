@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -7,6 +7,7 @@ import {
   FilterX,
   PanelTopOpen,
   Search,
+  Settings,
 } from 'lucide-react';
 import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
@@ -19,6 +20,26 @@ interface EpicsTableProps {
 }
 
 type EpicSortColumn = 'id' | 'title' | 'status' | 'priority' | 'assignee' | 'created' | 'updated' | 'children';
+
+interface ColumnConfig {
+  key: EpicSortColumn;
+  label: string;
+  visible: boolean;
+  width: number;
+  minWidth: number;
+  resizable: boolean;
+}
+
+const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
+  { key: 'id', label: 'ID', visible: true, width: 120, minWidth: 80, resizable: true },
+  { key: 'title', label: 'Title', visible: true, width: 300, minWidth: 150, resizable: true },
+  { key: 'children', label: 'Children', visible: true, width: 140, minWidth: 100, resizable: true },
+  { key: 'status', label: 'Status', visible: true, width: 130, minWidth: 100, resizable: true },
+  { key: 'priority', label: 'Priority', visible: true, width: 120, minWidth: 100, resizable: true },
+  { key: 'assignee', label: 'Assignee', visible: true, width: 140, minWidth: 100, resizable: true },
+  { key: 'created', label: 'Created', visible: true, width: 120, minWidth: 100, resizable: true },
+  { key: 'updated', label: 'Updated', visible: true, width: 120, minWidth: 100, resizable: true },
+];
 
 const CLOSED_CHILD_STATUSES: IssueStatus[] = ['closed', 'tombstone'];
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
@@ -45,6 +66,23 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() => {
+    const saved = localStorage.getItem('beads-epics-column-config');
+    if (saved) {
+      const parsed = JSON.parse(saved) as ColumnConfig[];
+      return DEFAULT_COLUMN_CONFIGS.map(defaultCol => {
+        const savedCol = parsed.find(c => c.key === defaultCol.key);
+        return savedCol ? { ...defaultCol, ...savedCol } : defaultCol;
+      });
+    }
+    return DEFAULT_COLUMN_CONFIGS;
+  });
+
+  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const resizeStartX = useRef(0);
+  const resizeStartWidth = useRef(0);
+  const [columnMenuOpen, setColumnMenuOpen] = useState(false);
+
   useEffect(() => {
     localStorage.setItem('beads-epics-filter-status', JSON.stringify(statusFilter));
   }, [statusFilter]);
@@ -54,12 +92,51 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
   }, [priorityFilter]);
 
   useEffect(() => {
+    localStorage.setItem('beads-epics-column-config', JSON.stringify(columnConfigs));
+  }, [columnConfigs]);
+
+  useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(null);
     if (openDropdown) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
   }, [openDropdown]);
+
+  useEffect(() => {
+    const handleClickOutside = () => setColumnMenuOpen(false);
+    if (columnMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [columnMenuOpen]);
+
+  useEffect(() => {
+    if (!resizingColumn) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = e.clientX - resizeStartX.current;
+      const newWidth = Math.max(resizeStartWidth.current + delta, 50);
+
+      setColumnConfigs(prev =>
+        prev.map(col =>
+          col.key === resizingColumn ? { ...col, width: Math.max(newWidth, col.minWidth) } : col
+        )
+      );
+    };
+
+    const handleMouseUp = () => {
+      setResizingColumn(null);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [resizingColumn]);
 
   const epics = useMemo(
     () => issues.filter((issue) => issue.issue_type === 'epic' && issue.status !== 'tombstone'),
@@ -210,19 +287,143 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
     }
   };
 
+  const handleResizeStart = (columnKey: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const column = columnConfigs.find(c => c.key === columnKey);
+    if (!column) return;
+
+    setResizingColumn(columnKey);
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = column.width;
+  };
+
+  const toggleColumnVisibility = (columnKey: EpicSortColumn) => {
+    setColumnConfigs(prev =>
+      prev.map(col =>
+        col.key === columnKey ? { ...col, visible: !col.visible } : col
+      )
+    );
+  };
+
+  const getColumnStyle = (columnKey: EpicSortColumn): React.CSSProperties => {
+    const column = columnConfigs.find(c => c.key === columnKey);
+    if (!column || !column.visible) {
+      return { display: 'none' };
+    }
+    return {};
+  };
+
+  const visibleColumns = columnConfigs.filter(c => c.visible);
+  const totalTableWidth = visibleColumns.reduce((sum, col) => sum + col.width, 0);
+
+  const renderColumnHeader = (col: ColumnConfig) => {
+    const hasFilters = col.key === 'status' || col.key === 'priority';
+
+    return (
+      <th
+        key={col.key}
+        className="px-6 py-3 relative"
+        style={{ width: `${col.width}px` }}
+      >
+        <div className="flex items-center">
+          <button className="flex items-center gap-1" onClick={() => handleSort(col.key)}>
+            {col.label}
+            {renderSortIndicator(col.key)}
+          </button>
+          {hasFilters && col.key === 'status' && (
+            <FilterDropdown
+              column="status"
+              values={uniqueStatuses}
+              activeFilters={statusFilter}
+              openDropdown={openDropdown}
+              setOpenDropdown={setOpenDropdown}
+              onToggle={(value) =>
+                setStatusFilter((prev) =>
+                  prev.includes(value as IssueStatus)
+                    ? prev.filter((v) => v !== value)
+                    : [...prev, value as IssueStatus]
+                )
+              }
+              onClear={() => setStatusFilter([])}
+            />
+          )}
+          {hasFilters && col.key === 'priority' && (
+            <FilterDropdown
+              column="priority"
+              values={uniquePriorities}
+              activeFilters={priorityFilter}
+              openDropdown={openDropdown}
+              setOpenDropdown={setOpenDropdown}
+              onToggle={(value) =>
+                setPriorityFilter((prev) =>
+                  prev.includes(value as Priority)
+                    ? prev.filter((v) => v !== value)
+                    : [...prev, value as Priority]
+                )
+              }
+              onClear={() => setPriorityFilter([])}
+              formatValue={(value) => PRIORITY_LABELS[value as Priority] || String(value)}
+            />
+          )}
+        </div>
+        {col.resizable && (
+          <div
+            className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-indigo-200/50 active:bg-indigo-300"
+            onMouseDown={(e) => handleResizeStart(col.key, e)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
+      </th>
+    );
+  };
+
   return (
     <>
       <div className="card overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50/50">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search epics by ID, title, or owner..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-            />
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Search epics by ID, title, or owner..."
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+              />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            </div>
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setColumnMenuOpen(!columnMenuOpen);
+                }}
+                className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white hover:bg-slate-50 flex items-center gap-2"
+                title="Show/hide columns"
+              >
+                <Settings className="w-4 h-4" />
+                Columns
+              </button>
+              {columnMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10 py-1">
+                  {columnConfigs.map((col) => (
+                    <label
+                      key={col.key}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={col.visible}
+                        onChange={() => toggleColumnVisibility(col.key)}
+                        className="rounded border-slate-300"
+                      />
+                      <span className="text-sm">{col.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -245,92 +446,10 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
         )}
 
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm text-left">
+          <table className="text-sm text-left" style={{ tableLayout: 'fixed', width: `${totalTableWidth}px` }}>
             <thead className="bg-slate-50 text-slate-600 font-medium border-b">
               <tr>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('id')}>
-                    ID
-                    {renderSortIndicator('id')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('title')}>
-                    Title
-                    {renderSortIndicator('title')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('children')}>
-                    Children
-                    {renderSortIndicator('children')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <div className="flex items-center">
-                    <button className="flex items-center gap-1" onClick={() => handleSort('status')}>
-                      Status
-                      {renderSortIndicator('status')}
-                    </button>
-                    <FilterDropdown
-                      column="status"
-                      values={uniqueStatuses}
-                      activeFilters={statusFilter}
-                      openDropdown={openDropdown}
-                      setOpenDropdown={setOpenDropdown}
-                      onToggle={(value) =>
-                        setStatusFilter((prev) =>
-                          prev.includes(value as IssueStatus)
-                            ? prev.filter((v) => v !== value)
-                            : [...prev, value as IssueStatus]
-                        )
-                      }
-                      onClear={() => setStatusFilter([])}
-                    />
-                  </div>
-                </th>
-                <th className="px-6 py-3">
-                  <div className="flex items-center">
-                    <button className="flex items-center gap-1" onClick={() => handleSort('priority')}>
-                      Priority
-                      {renderSortIndicator('priority')}
-                    </button>
-                    <FilterDropdown
-                      column="priority"
-                      values={uniquePriorities}
-                      activeFilters={priorityFilter}
-                      openDropdown={openDropdown}
-                      setOpenDropdown={setOpenDropdown}
-                      onToggle={(value) =>
-                        setPriorityFilter((prev) =>
-                          prev.includes(value as Priority)
-                            ? prev.filter((v) => v !== value)
-                            : [...prev, value as Priority]
-                        )
-                      }
-                      onClear={() => setPriorityFilter([])}
-                      formatValue={(value) => PRIORITY_LABELS[value as Priority] || String(value)}
-                    />
-                  </div>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('assignee')}>
-                    Assignee
-                    {renderSortIndicator('assignee')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('created')}>
-                    Created
-                    {renderSortIndicator('created')}
-                  </button>
-                </th>
-                <th className="px-6 py-3">
-                  <button className="flex items-center gap-1" onClick={() => handleSort('updated')}>
-                    Updated
-                    {renderSortIndicator('updated')}
-                  </button>
-                </th>
+                {visibleColumns.map(renderColumnHeader)}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -358,13 +477,13 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                     className="group hover:bg-slate-50 cursor-pointer border-l-4 border-indigo-100/70"
                     onClick={() => openDescription(epic)}
                   >
-                    <td className="px-6 py-3 font-mono text-slate-500 whitespace-nowrap">
+                    <td style={getColumnStyle('id')} className="px-6 py-3 font-mono text-slate-500 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <Boxes className="w-4 h-4 text-indigo-500" />
                         <span>{epic.id.includes('-') ? epic.id.split('-').pop() : epic.id}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-3 font-medium text-slate-900">
+                    <td style={getColumnStyle('title')} className="px-6 py-3 font-medium text-slate-900">
                       <div className="flex items-center gap-2">
                         <span>{epic.title || 'Untitled epic'}</span>
                         <span className="text-xs text-slate-400">{ageInDays}d old</span>
@@ -380,7 +499,7 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-3">
+                    <td style={getColumnStyle('children')} className="px-6 py-3">
                       <button
                         className={`text-left ${childCounts.total === 0 ? 'cursor-default' : 'cursor-pointer'} w-32`}
                         onClick={(e) => {
@@ -410,7 +529,7 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                         </div>
                       </button>
                     </td>
-                    <td className="px-6 py-3">
+                    <td style={getColumnStyle('status')} className="px-6 py-3">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
                           epic.status === 'blocked'
@@ -423,18 +542,18 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                         {epic.status.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-3">
+                    <td style={getColumnStyle('priority')} className="px-6 py-3">
                       <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded border border-indigo-100 text-indigo-700">
                         {PRIORITY_LABELS[epic.priority]}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-slate-600">
+                    <td style={getColumnStyle('assignee')} className="px-6 py-3 text-slate-600">
                       {epic.assignee || '—'}
                     </td>
-                    <td className="px-6 py-3 text-slate-500 whitespace-nowrap">
+                    <td style={getColumnStyle('created')} className="px-6 py-3 text-slate-500 whitespace-nowrap">
                       {created.toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-3 text-slate-500 whitespace-nowrap">
+                    <td style={getColumnStyle('updated')} className="px-6 py-3 text-slate-500 whitespace-nowrap">
                       {updated ? updated.toLocaleDateString() : '—'}
                     </td>
                   </tr>

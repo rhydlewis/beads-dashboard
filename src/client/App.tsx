@@ -87,7 +87,7 @@ function App() {
   const activeIssuesCount = parsedIssues.filter((i) => i.status !== 'tombstone').length;
 
   return (
-    <div className="max-w-8xl mx-auto p-8">
+    <div className="max-w-6xl mx-auto p-8">
       <header className="mb-8">
         <div className="flex justify-between items-center mb-6">
           <div>
