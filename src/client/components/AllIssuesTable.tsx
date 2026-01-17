@@ -201,11 +201,17 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
 
       console.log('[Resize] Mouse move - clientX:', e.clientX, 'delta:', delta, 'newWidth:', newWidth);
 
-      setColumnConfigs(prev =>
-        prev.map(col =>
-          col.key === resizingColumn ? { ...col, width: Math.max(newWidth, col.minWidth) } : col
-        )
-      );
+      setColumnConfigs(prev => {
+        const updated = prev.map(col => {
+          if (col.key === resizingColumn) {
+            const updatedCol = { ...col, width: Math.max(newWidth, col.minWidth) };
+            console.log('[Resize] Updating column', col.key, 'from', col.width, 'to', updatedCol.width);
+            return updatedCol;
+          }
+          return col;
+        });
+        return updated;
+      });
     };
 
     const handleMouseUp = () => {
@@ -232,6 +238,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
   };
 
   const visibleColumns = columnConfigs.filter(c => c.visible);
+  const totalTableWidth = visibleColumns.reduce((sum, col) => sum + col.width, 0);
 
   const nonEpicIssues = useMemo(() => issues.filter((issue) => issue.issue_type !== 'epic'), [issues]);
 
@@ -575,6 +582,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
       }
     })();
 
+    console.log('[Render] Rendering header for', col.key, 'with width:', col.width);
     return (
       <th
         key={col.key}
@@ -679,7 +687,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm text-left" style={{ tableLayout: 'fixed' }}>
+          <table className="text-sm text-left" style={{ tableLayout: 'fixed', width: `${totalTableWidth}px` }}>
             <thead className="bg-slate-50 text-slate-600 font-medium border-b">
               <tr>
                 {visibleColumns.map(renderColumnHeader)}
