@@ -694,37 +694,37 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
 
                 return (
                   <tr key={issue.id} className="hover:bg-slate-50 group">
-                    <td className="px-6 py-3 font-mono text-slate-500 whitespace-nowrap">
+                    <td className="px-6 py-3 font-mono text-slate-500 whitespace-nowrap" style={getColumnStyle('id')}>
                       <div className="flex items-center gap-2">
                         <span>{shortId}</span>
                         <button
                           onClick={() => handleCopy(issue.id)}
-                          style={getColumnStyle("title")} className="text-slate-300 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
+                          className="text-slate-300 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
                           title="Copy full ID"
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-3 font-medium text-slate-900">
+                    <td className="px-6 py-3 font-medium text-slate-900" style={getColumnStyle('title')}>
                       <div className="flex items-center gap-2">
                         <span>{issue.title || 'Untitled'}</span>
                         <button
                           onClick={() => openDescription(issue)}
-                          style={getColumnStyle("type")} className="ml-auto text-slate-300 hover:text-blue-600 transition-colors"
+                          className="ml-auto text-slate-300 hover:text-blue-600 transition-colors"
                           title="View Description"
                         >
                           <PanelTopOpen className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-6 py-3" style={getColumnStyle('type')}>
                       <span className={`capitalize inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium ${typeInfo.class}`}>
                         {typeInfo.icon}
                         {issue.issue_type}
                       </span>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-6 py-3" style={getColumnStyle('priority')}>
                       <div
                         className="flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 -ml-1"
                         tabIndex={0}
@@ -766,7 +766,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-6 py-3" style={getColumnStyle('status')}>
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
                           issue.status === 'blocked'
@@ -779,19 +779,19 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                         {issue.status.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-3 whitespace-nowrap text-slate-500">
+                    <td className="px-6 py-3 whitespace-nowrap text-slate-500" style={getColumnStyle('created')}>
                       {created.toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-3 whitespace-nowrap text-slate-500">
+                    <td className="px-6 py-3 whitespace-nowrap text-slate-500" style={getColumnStyle('updated')}>
                       {updated ? updated.toLocaleDateString() : '—'}
                     </td>
-                    <td className={`px-6 py-3 ${cycleTime === '-' ? 'text-slate-400' : 'text-slate-900'}`}>
+                    <td className={`px-6 py-3 ${cycleTime === '-' ? 'text-slate-400' : 'text-slate-900'}`} style={getColumnStyle('cycleTime')}>
                       {cycleTime}
                     </td>
-                    <td className={`px-6 py-3 ${isStale ? 'text-amber-600 font-medium' : 'text-slate-900'}`}>
+                    <td className={`px-6 py-3 ${isStale ? 'text-amber-600 font-medium' : 'text-slate-900'}`} style={getColumnStyle('age')}>
                       {age}
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-6 py-3" style={getColumnStyle('actions')}>
                       <div className="flex items-center gap-2">
                         {issue.status === 'blocked' && (
                           <button
