@@ -94,14 +94,14 @@ function KanbanColumn({
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <div className="flex flex-col items-center gap-2 flex-1">
-            <h3 className="font-semibold text-xs uppercase tracking-wide transform -rotate-90 whitespace-nowrap">
+          <div className="flex-1 flex flex-col items-center justify-center gap-2">
+            <h3 className="font-semibold text-xs uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
               {getStatusLabel(status)}
             </h3>
-            <span className={`text-sm font-bold ${isOverLimit ? 'text-red-600' : ''}`}>
-              {count}
-            </span>
           </div>
+          <span className={`text-sm font-bold mt-2 ${isOverLimit ? 'text-red-600' : ''}`}>
+            {count}
+          </span>
         </div>
       </div>
     );
