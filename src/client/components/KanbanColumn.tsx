@@ -95,7 +95,7 @@ function KanbanColumn({
             <ChevronRight className="w-4 h-4" />
           </button>
           <div className="flex flex-col items-center gap-2 flex-1">
-            <h3 className="font-semibold text-xs uppercase tracking-wide writing-mode-vertical transform rotate-180 whitespace-nowrap">
+            <h3 className="font-semibold text-xs uppercase tracking-wide transform -rotate-90 whitespace-nowrap">
               {getStatusLabel(status)}
             </h3>
             <span className={`text-sm font-bold ${isOverLimit ? 'text-red-600' : ''}`}>
