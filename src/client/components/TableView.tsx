@@ -24,7 +24,7 @@ import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
 import IssueViewModal from './IssueViewModal';
 import {
-  loadThresholdConfig,
+  AgingThresholdConfig,
   classifyIssueAge,
   getAgingStatusClass,
   getIssueAgeHours,
@@ -34,15 +34,15 @@ import {
 interface TableViewProps {
   issues: Issue[];
   onRefresh: () => void;
+  thresholdConfig: AgingThresholdConfig;
 }
 
-function TableView({ issues, onRefresh }: TableViewProps) {
+function TableView({ issues, onRefresh, thresholdConfig }: TableViewProps) {
   const [filterText, setFilterText] = useState('');
   const [activeDescription, setActiveDescription] = useState<Issue | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
-  const [thresholdConfig] = useState(() => loadThresholdConfig());
   const [today] = useState(() => new Date());
 
   // Column filters with localStorage persistence

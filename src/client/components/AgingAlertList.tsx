@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, AlertOctagon, Clock, User, Tag, Filter, X } from 'lucide-react';
+import { AlertTriangle, AlertOctagon, Clock, User, Bug, Box, Boxes, ListCheck, Filter, X } from 'lucide-react';
 import type { Issue } from '@shared/types';
 import {
-  loadThresholdConfig,
+  AgingThresholdConfig,
   getAgingIssues,
   formatAgeDisplay,
   getIssueAgeHours,
@@ -11,17 +11,26 @@ import {
 interface AgingAlertListProps {
   issues: Issue[];
   onConfigureClick: () => void;
+  thresholdConfig: AgingThresholdConfig;
 }
 
-export function AgingAlertList({ issues, onConfigureClick }: AgingAlertListProps) {
-  const [config] = useState(() => loadThresholdConfig());
+export function AgingAlertList({ issues, onConfigureClick, thresholdConfig }: AgingAlertListProps) {
   const [today] = useState(() => new Date());
   const [filterStatus, setFilterStatus] = useState<'all' | 'warning' | 'critical'>('all');
   const [filterAssignee, setFilterAssignee] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Type icons mapping
+  const getTypeIcon = (type: string) => {
+    const t = (type || '').toLowerCase();
+    if (t === 'bug') return <Bug className="w-3 h-3" />;
+    if (t === 'feature') return <Box className="w-3 h-3" />;
+    if (t === 'epic') return <Boxes className="w-3 h-3" />;
+    return <ListCheck className="w-3 h-3" />; // Default (Task)
+  };
+
   // Get all aging issues
-  const allAgingIssues = getAgingIssues(issues, config, today);
+  const allAgingIssues = getAgingIssues(issues, thresholdConfig, today);
 
   // Apply filters
   const filteredIssues = allAgingIssues.filter((item) => {
@@ -250,7 +259,7 @@ export function AgingAlertList({ issues, onConfigureClick }: AgingAlertListProps
                       </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-                          <Tag className="w-3 h-3" />
+                          {getTypeIcon(issue.issue_type)}
                           {issue.issue_type}
                         </span>
                       </td>
@@ -283,7 +292,7 @@ export function AgingAlertList({ issues, onConfigureClick }: AgingAlertListProps
             <div>
               <div className="text-sm font-medium text-slate-700">Warning Threshold</div>
               <div className="text-sm text-slate-500">
-                {config.warningThreshold} {config.warningUnit}
+                {thresholdConfig.warningThreshold} {thresholdConfig.warningUnit}
               </div>
             </div>
           </div>
@@ -295,7 +304,7 @@ export function AgingAlertList({ issues, onConfigureClick }: AgingAlertListProps
             <div>
               <div className="text-sm font-medium text-slate-700">Critical Threshold</div>
               <div className="text-sm text-slate-500">
-                {config.criticalThreshold} {config.criticalUnit}
+                {thresholdConfig.criticalThreshold} {thresholdConfig.criticalUnit}
               </div>
             </div>
           </div>

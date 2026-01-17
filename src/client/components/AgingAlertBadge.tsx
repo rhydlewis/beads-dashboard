@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AlertTriangle, AlertOctagon, Settings, X } from 'lucide-react';
 import type { Issue } from '@shared/types';
 import {
-  loadThresholdConfig,
+  AgingThresholdConfig,
   countIssuesByAgingStatus,
   getAgingIssues,
   formatAgeDisplay,
@@ -12,19 +12,19 @@ import {
 interface AgingAlertBadgeProps {
   issues: Issue[];
   onConfigureClick: () => void;
+  thresholdConfig: AgingThresholdConfig;
 }
 
-export function AgingAlertBadge({ issues, onConfigureClick }: AgingAlertBadgeProps) {
-  const [config] = useState(() => loadThresholdConfig());
+export function AgingAlertBadge({ issues, onConfigureClick, thresholdConfig }: AgingAlertBadgeProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [today] = useState(() => new Date());
 
   // Recalculate counts when issues change
-  const { warningCount, criticalCount } = countIssuesByAgingStatus(issues, config, today);
+  const { warningCount, criticalCount } = countIssuesByAgingStatus(issues, thresholdConfig, today);
   const totalAging = warningCount + criticalCount;
 
   // Get aging issues for dropdown
-  const agingIssues = getAgingIssues(issues, config, today);
+  const agingIssues = getAgingIssues(issues, thresholdConfig, today);
 
   // Determine badge color based on severity
   const getBadgeColor = () => {

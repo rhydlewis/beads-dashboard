@@ -103,8 +103,15 @@ function App() {
               Live View • {activeIssuesCount} issues loaded
             </p>
           </div>
-          <div className="text-xs text-slate-400">
-            {loading ? 'Connecting...' : 'Connected'}
+          <div className="flex items-center gap-4">
+            <div className="text-xs text-slate-400">
+              {loading ? 'Connecting...' : 'Connected'}
+            </div>
+            <AgingAlertBadge
+              issues={parsedIssues}
+              onConfigureClick={() => setShowConfigModal(true)}
+              thresholdConfig={thresholdConfig}
+            />
           </div>
         </div>
 
@@ -162,7 +169,11 @@ function App() {
           No issues found in .beads directory.
         </div>
       ) : activeTab === 'table' ? (
-        <TableView issues={parsedIssues} onRefresh={fetchData} />
+        <TableView
+          issues={parsedIssues}
+          onRefresh={fetchData}
+          thresholdConfig={thresholdConfig}
+        />
       ) : activeTab === 'board' ? (
         <KanbanBoard issues={parsedIssues} onRefresh={fetchData} />
       ) : activeTab === 'dashboard' ? (
@@ -175,14 +186,9 @@ function App() {
         <AgingAlertList
           issues={parsedIssues}
           onConfigureClick={() => setShowConfigModal(true)}
+          thresholdConfig={thresholdConfig}
         />
       )}
-
-      {/* Aging Alert Badge in header */}
-      <AgingAlertBadge
-        issues={parsedIssues}
-        onConfigureClick={() => setShowConfigModal(true)}
-      />
 
       {/* Configuration Modal */}
       {showConfigModal && (
