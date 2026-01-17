@@ -120,7 +120,6 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
     'in_progress',
     'blocked',
     'closed',
-    'tombstone',
   ];
 
   // Apply optimistic updates to issues
