@@ -16,7 +16,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
 
   /**
    * GET /api/data
-   * Returns all issues from .beads/issues.jsonl
+   * Returns all issues from the Beads SQLite database via `bd list --json` command
    */
   router.get('/data', async (_req: Request, res: Response) => {
     try {
@@ -220,7 +220,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
         });
       });
 
-      // Flush changes to JSONL file
+      // Flush changes from SQLite to disk
       await new Promise<void>((resolve, _reject) => {
         exec('bd sync --flush-only', { cwd: projectRoot }, (syncError, _syncStdout, _syncStderr) => {
           if (syncError) {
@@ -232,7 +232,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       });
 
       res.json({ success: true });
-      // Don't manually emit refresh - the file watcher will detect the issues.jsonl change
+      // Don't manually emit refresh - the file watcher will detect the beads.db change
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ error: errorMessage });
@@ -276,7 +276,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
         });
       });
 
-      // Flush changes to JSONL file
+      // Flush changes from SQLite to disk
       await new Promise<void>((resolve, _reject) => {
         exec('bd sync --flush-only', { cwd: projectRoot }, (syncError, _syncStdout, _syncStderr) => {
           if (syncError) {
@@ -288,7 +288,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       });
 
       res.json({ success: true });
-      // Don't manually emit refresh - the file watcher will detect the issues.jsonl change
+      // Don't manually emit refresh - the file watcher will detect the beads.db change
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ error: errorMessage });

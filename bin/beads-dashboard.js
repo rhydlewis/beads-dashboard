@@ -52,7 +52,7 @@ EXAMPLES:
 
 Once running, open http://localhost:3001 (or your custom port) in your browser
 to view the dashboard. The dashboard will automatically refresh when your
-.beads/issues.jsonl file changes.
+.beads/beads.db file changes.
 
 FEATURES:
   • Real-time updates via WebSocket

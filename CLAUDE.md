@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Beads Performance Dashboard is a local, real-time lean metrics dashboard for the [Beads](https://github.com/steveyegge/beads) issue tracker. It visualizes the Beads database (`.beads/issues.jsonl`) to provide insights into flow, bottlenecks, and continuous improvement metrics.
+Beads Performance Dashboard is a local, real-time lean metrics dashboard for the [Beads](https://github.com/steveyegge/beads) issue tracker. It visualizes the Beads SQLite database (`.beads/beads.db`) via the `bd` CLI to provide insights into flow, bottlenecks, and continuous improvement metrics.
 
 Built with **TypeScript, Vite, React 18, and Vitest**, the dashboard provides type-safe code, fast HMR development, and comprehensive unit test coverage for critical business logic.
 
@@ -114,16 +114,17 @@ beads-dashboard/
 - Emits `refresh` event on file changes
 
 #### API Routes (`src/server/routes/api.ts`)
-- `GET /api/data` - Returns all parsed issues from `.beads/issues.jsonl`
+- `GET /api/data` - Returns all issues from Beads SQLite database via `bd list --json`
 - `POST /api/issues/:id` - Updates issue description via `bd update --body-file`
 - `POST /api/issues/:id/status` - Updates issue status via `bd update --status`
 
 All mutations trigger `bd sync --flush-only` to persist changes.
 
 #### Data Reader (`src/server/utils/beadsReader.ts`)
-- Reads and parses `.beads/issues.jsonl` (newline-delimited JSON)
-- Handles malformed JSON gracefully
+- Reads issues from Beads SQLite database via `bd list --json --status=all` command
+- Returns parsed JSON array of all issues
 - Type-safe parsing with `Issue` interface
+- Note: We use the CLI instead of direct SQLite access to respect Beads' data access patterns
 
 ### Frontend (`src/client/`)
 
@@ -177,7 +178,7 @@ All functions are fully unit tested with 100% coverage.
 ### Shared Types (`src/shared/types.ts`)
 
 TypeScript interfaces used across client and server:
-- `Issue` - Main issue interface matching `.beads/issues.jsonl`
+- `Issue` - Main issue interface matching Beads issue data structure
 - `IssueStatus` - Union type of valid statuses
 - `IssueType` - Union type of issue types (task, bug, feature, epic)
 - `Priority` - 0-4 (Critical to Lowest)
@@ -284,9 +285,9 @@ TypeScript interfaces used across client and server:
 - **46 test cases**, all passing
 
 **Beads Reader** (`tests/unit/beadsReader.test.ts`):
-- Reading valid JSONL
-- Handling malformed JSON (graceful skip)
-- Missing files (returns empty array)
+- Reading data via `bd list --json` command
+- Handling command execution errors gracefully
+- Missing .beads directory (returns empty array)
 - Empty lines and whitespace
 
 **API Endpoints** (`tests/unit/api.test.ts`):
@@ -380,13 +381,14 @@ To modify issues programmatically:
 ### Requirements
 
 The dashboard assumes:
-- Valid `.beads/issues.jsonl` file exists in the project directory
-- Issues follow Beads JSONL format (see Data Model)
-- `bd` command is available in PATH (for description/status editing features)
+- Valid `.beads/` directory with SQLite database exists in the project directory
+- `bd` command is available in PATH (for all data access and mutation operations)
+- Beads project is properly initialized with `bd init`
 
 ### Data Model
 
-Issues are stored in `.beads/issues.jsonl` with this structure:
+Issues are stored in `.beads/beads.db` (SQLite database) and accessed via the `bd` CLI.
+The dashboard retrieves issues using `bd list --json --status=all` which returns this structure:
 ```typescript
 {
   id: "beads-dashboard-abc123",  // Project prefix + hash
