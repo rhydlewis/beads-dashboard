@@ -130,6 +130,32 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+// Validation schemas
+import { z } from 'zod';
+
+// Maximum size for text inputs (100KB as suggested)
+const MAX_TEXT_LENGTH = 100 * 1024;
+
+export const UpdateIssueDescriptionSchema = z.object({
+  description: z.string().max(MAX_TEXT_LENGTH, 'Description must be less than 100KB'),
+});
+
+export const UpdateIssueDesignSchema = z.object({
+  design: z.string().max(MAX_TEXT_LENGTH, 'Design must be less than 100KB'),
+});
+
+export const UpdateIssueAcceptanceSchema = z.object({
+  acceptance_criteria: z.string().max(MAX_TEXT_LENGTH, 'Acceptance criteria must be less than 100KB'),
+});
+
+export const UpdateIssueStatusSchema = z.object({
+  status: z.enum(['open', 'in_progress', 'blocked', 'closed', 'deferred', 'tombstone', 'pinned', 'hooked']),
+});
+
+export const UpdateIssuePrioritySchema = z.object({
+  priority: z.number().int().min(0).max(4, 'Priority must be between 0 and 4'),
+});
+
 // Priority display labels
 export const PRIORITY_LABELS: Record<Priority, string> = {
   0: 'Critical',

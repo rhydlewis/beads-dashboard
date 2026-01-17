@@ -3,13 +3,21 @@ import { exec, spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { ZodError } from 'zod';
 import { readBeadsData } from '../utils/beadsReader.js';
-import type { 
-  UpdateIssueDescriptionRequest, 
-  UpdateIssueStatusRequest, 
+import type {
+  UpdateIssueDescriptionRequest,
+  UpdateIssueStatusRequest,
   UpdateIssuePriorityRequest,
   UpdateIssueDesignRequest,
   UpdateIssueAcceptanceRequest
+} from '@shared/types';
+import {
+  UpdateIssueDescriptionSchema,
+  UpdateIssueStatusSchema,
+  UpdateIssuePrioritySchema,
+  UpdateIssueDesignSchema,
+  UpdateIssueAcceptanceSchema,
 } from '@shared/types';
 
 export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
@@ -35,11 +43,18 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
    */
   router.post('/issues/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { description } = req.body as UpdateIssueDescriptionRequest;
 
-    if (!description && description !== '') {
-      return res.status(400).json({ error: 'Description is required' });
+    // Validate input
+    try {
+      UpdateIssueDescriptionSchema.parse(req.body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      return res.status(400).json({ error: 'Invalid request body' });
     }
+
+    const { description } = req.body as UpdateIssueDescriptionRequest;
 
     // Write description to temp file in OS temp directory to avoid escaping issues
     // Use timestamp and process ID for uniqueness
@@ -91,13 +106,20 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
    */
   router.post('/issues/:id/status', async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { status } = req.body as UpdateIssueStatusRequest;
 
-    console.log(`[API] Updating issue ${id} to status: ${status}`);
+    console.log(`[API] Updating issue ${id} to status: ${req.body.status}`);
 
-    if (!status) {
-      return res.status(400).json({ error: 'Status is required' });
+    // Validate input
+    try {
+      UpdateIssueStatusSchema.parse(req.body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      return res.status(400).json({ error: 'Invalid request body' });
     }
+
+    const { status } = req.body as UpdateIssueStatusRequest;
 
     try {
       await new Promise<void>((resolve, reject) => {
@@ -167,11 +189,18 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
    */
   router.post('/issues/:id/priority', async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { priority } = req.body as UpdateIssuePriorityRequest;
 
-    if (priority === undefined || priority === null) {
-      return res.status(400).json({ error: 'Priority is required' });
+    // Validate input
+    try {
+      UpdateIssuePrioritySchema.parse(req.body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      return res.status(400).json({ error: 'Invalid request body' });
     }
+
+    const { priority } = req.body as UpdateIssuePriorityRequest;
 
     try {
       await new Promise<void>((resolve, reject) => {
@@ -201,11 +230,18 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
   router.post('/issues/:id/design', async (req: Request, res: Response) => {
     const { id } = req.params;
     const issueId = String(id);
-    const { design } = req.body as UpdateIssueDesignRequest;
 
-    if (design === undefined) {
-      return res.status(400).json({ error: 'Design is required' });
+    // Validate input
+    try {
+      UpdateIssueDesignSchema.parse(req.body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      return res.status(400).json({ error: 'Invalid request body' });
     }
+
+    const { design } = req.body as UpdateIssueDesignRequest;
 
     try {
       await new Promise<void>((resolve, reject) => {
@@ -257,11 +293,18 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
   router.post('/issues/:id/acceptance', async (req: Request, res: Response) => {
     const { id } = req.params;
     const issueId = String(id);
-    const { acceptance_criteria } = req.body as UpdateIssueAcceptanceRequest;
 
-    if (acceptance_criteria === undefined) {
-      return res.status(400).json({ error: 'Acceptance criteria is required' });
+    // Validate input
+    try {
+      UpdateIssueAcceptanceSchema.parse(req.body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      return res.status(400).json({ error: 'Invalid request body' });
     }
+
+    const { acceptance_criteria } = req.body as UpdateIssueAcceptanceRequest;
 
     try {
       await new Promise<void>((resolve, reject) => {
