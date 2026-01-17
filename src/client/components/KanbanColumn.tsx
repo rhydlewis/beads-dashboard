@@ -89,17 +89,15 @@ function KanbanColumn({
         <div className={`h-full flex flex-col items-center py-4 px-2 rounded-lg ${getStatusColor(status)}`}>
           <button
             onClick={() => setIsCollapsed(false)}
-            className="p-1 hover:bg-white/50 rounded transition-colors mb-2"
+            className="p-1 hover:bg-white/50 rounded transition-colors mb-3"
             title={`Expand ${getStatusLabel(status)} column`}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <div className="flex-1 flex flex-col items-center justify-center gap-2">
-            <h3 className="font-semibold text-xs uppercase tracking-wide whitespace-nowrap" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
-              {getStatusLabel(status)}
-            </h3>
-          </div>
-          <span className={`text-sm font-bold mt-2 ${isOverLimit ? 'text-red-600' : ''}`}>
+          <h3 className="font-semibold text-xs uppercase tracking-wide whitespace-nowrap mb-3" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+            {getStatusLabel(status)}
+          </h3>
+          <span className={`text-sm font-bold ${isOverLimit ? 'text-red-600' : ''}`}>
             {count}
           </span>
         </div>
