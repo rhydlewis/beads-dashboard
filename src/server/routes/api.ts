@@ -267,19 +267,11 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
         });
       });
 
-      // Flush changes from SQLite to disk
-      await new Promise<void>((resolve, _reject) => {
-        exec('bd sync --flush-only', { cwd: projectRoot }, (syncError, _syncStdout, _syncStderr) => {
-          if (syncError) {
-            console.error(`sync error: ${syncError}`);
-            // Don't fail the request if sync fails
-          }
-          resolve();
-        });
-      });
-
       res.json({ success: true });
-      // Don't manually emit refresh - the file watcher will detect the beads.db change
+
+      // Emit refresh so clients reload from database
+      // Note: Daemon auto-sync handles flushing to disk, file watcher detects beads.db changes
+      emitRefresh();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ error: errorMessage });
@@ -330,19 +322,11 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
         });
       });
 
-      // Flush changes from SQLite to disk
-      await new Promise<void>((resolve, _reject) => {
-        exec('bd sync --flush-only', { cwd: projectRoot }, (syncError, _syncStdout, _syncStderr) => {
-          if (syncError) {
-            console.error(`sync error: ${syncError}`);
-            // Don't fail the request if sync fails
-          }
-          resolve();
-        });
-      });
-
       res.json({ success: true });
-      // Don't manually emit refresh - the file watcher will detect the beads.db change
+
+      // Emit refresh so clients reload from database
+      // Note: Daemon auto-sync handles flushing to disk, file watcher detects beads.db changes
+      emitRefresh();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ error: errorMessage });
