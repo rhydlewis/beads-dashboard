@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Settings, Eye, EyeOff } from 'lucide-react';
+import { Settings, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Issue, IssueStatus } from '@shared/types';
 import KanbanCard from './KanbanCard';
 
@@ -29,9 +29,19 @@ function KanbanColumn({
   onShowAllHiddenToggle,
 }: KanbanColumnProps) {
   const [showSettings, setShowSettings] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem(`beads-kanban-column-collapsed-${status}`);
+    return saved === 'true';
+  });
+
   const { setNodeRef, isOver } = useDroppable({
     id: status,
   });
+
+  // Persist collapsed state to localStorage
+  useEffect(() => {
+    localStorage.setItem(`beads-kanban-column-collapsed-${status}`, isCollapsed.toString());
+  }, [isCollapsed, status]);
 
   // Close settings dropdown when clicking outside
   useEffect(() => {
@@ -72,14 +82,48 @@ function KanbanColumn({
   const count = issues.length;
   const isOverLimit = wipLimit !== undefined && count >= wipLimit;
 
+  // Collapsed view - vertical header
+  if (isCollapsed) {
+    return (
+      <div className="flex-shrink-0 w-12 flex flex-col">
+        <div className={`h-full flex flex-col items-center py-4 px-2 rounded-lg ${getStatusColor(status)}`}>
+          <button
+            onClick={() => setIsCollapsed(false)}
+            className="p-1 hover:bg-white/50 rounded transition-colors mb-2"
+            title={`Expand ${getStatusLabel(status)} column`}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <div className="flex flex-col items-center gap-2 flex-1">
+            <h3 className="font-semibold text-xs uppercase tracking-wide writing-mode-vertical transform rotate-180 whitespace-nowrap">
+              {getStatusLabel(status)}
+            </h3>
+            <span className={`text-sm font-bold ${isOverLimit ? 'text-red-600' : ''}`}>
+              {count}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-shrink-0 w-80 flex flex-col">
       {/* Column Header */}
       <div className={`sticky top-0 z-10 px-4 py-3 rounded-t-lg border-b-2 ${getStatusColor(status)}`}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm uppercase tracking-wide">
-            {getStatusLabel(status)}
-          </h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsCollapsed(true)}
+              className="p-1 hover:bg-white/50 rounded transition-colors"
+              title="Collapse column"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <h3 className="font-semibold text-sm uppercase tracking-wide">
+              {getStatusLabel(status)}
+            </h3>
+          </div>
           <div className="flex items-center gap-2">
             <span className={`text-sm font-bold ${isOverLimit ? 'text-red-600' : ''}`}>
               {count}
