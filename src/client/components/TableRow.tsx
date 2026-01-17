@@ -23,6 +23,7 @@ import {
   getIssueAgeHours,
   formatAgeDisplay,
 } from '@/utils/agingAlerts';
+import { extractShortId } from '@/utils/commonUtils';
 import QuickActions from './QuickActions';
 
 interface TableRowProps {
@@ -63,7 +64,7 @@ export default function TableRow({
   const PriorityIcon = getPriorityIcon(issue.priority);
 
   // Remove prefix from ID
-  const shortId = issue.id.includes('-') ? issue.id.split('-').pop() : issue.id;
+  const shortId = extractShortId(issue.id);
   const typeInfo = getTypeInfo(issue.issue_type);
 
   // Calculate aging status

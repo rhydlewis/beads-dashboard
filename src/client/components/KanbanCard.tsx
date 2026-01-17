@@ -15,6 +15,7 @@ import {
   Info,
 } from 'lucide-react';
 import type { Issue, Priority } from '@shared/types';
+import { extractShortId } from '@/utils/commonUtils';
 
 interface KanbanCardProps {
   issue: Issue;
@@ -100,7 +101,7 @@ function KanbanCard({ issue, onClick }: KanbanCardProps) {
   };
 
   // Short ID
-  const shortId = issue.id.includes('-') ? issue.id.split('-').pop() : issue.id;
+  const shortId = extractShortId(issue.id);
 
   return (
     <div

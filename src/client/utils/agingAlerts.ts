@@ -1,4 +1,5 @@
 import type { Issue, TimeGranularity } from '@shared/types';
+import { calculateAge, calculatePercentile } from './commonUtils';
 
 // Threshold configuration interface
 export interface AgingThresholdConfig {
@@ -112,8 +113,7 @@ export function classifyIssueAge(
  * Get age in hours for an issue
  */
 export function getIssueAgeHours(issue: Issue, today: Date = new Date()): number {
-  const createdDate = new Date(issue.created_at);
-  return (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+  return calculateAge(issue, today);
 }
 
 /**
@@ -126,22 +126,16 @@ export function calculateThresholdsFromPercentiles(
   today: Date = new Date()
 ): { warningHours: number; criticalHours: number } {
   const openIssues = issues.filter((i) => i.status !== 'closed' && i.status !== 'tombstone');
-  
+
   if (openIssues.length === 0) {
     return { warningHours: 4, criticalHours: 8 }; // Default fallback
   }
 
   const agesHours = openIssues.map((issue) => getIssueAgeHours(issue, today));
-  
-  // Sort ages for percentile calculation
-  const sortedAges = [...agesHours].sort((a, b) => a - b);
-  
-  const warningIndex = Math.floor(sortedAges.length * warningPercentile);
-  const criticalIndex = Math.floor(sortedAges.length * criticalPercentile);
-  
+
   return {
-    warningHours: sortedAges[warningIndex],
-    criticalHours: sortedAges[criticalIndex],
+    warningHours: calculatePercentile(agesHours, warningPercentile),
+    criticalHours: calculatePercentile(agesHours, criticalPercentile),
   };
 }
 

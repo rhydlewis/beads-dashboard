@@ -7,6 +7,7 @@ import {
   formatAgeDisplay,
   getIssueAgeHours,
 } from '@/utils/agingAlerts';
+import { extractShortId } from '@/utils/commonUtils';
 
 interface AgingAlertListProps {
   issues: Issue[];
@@ -203,9 +204,7 @@ export function AgingAlertList({ issues, onConfigureClick, thresholdConfig }: Ag
                 </tr>
               ) : (
                 filteredIssues.map(({ issue, ageDisplay, status, ageHours }) => {
-                  const shortId = issue.id.includes('-') 
-                    ? issue.id.split('-').pop() 
-                    : issue.id;
+                  const shortId = extractShortId(issue.id);
                   const createdDate = new Date(issue.created_at);
 
                   return (

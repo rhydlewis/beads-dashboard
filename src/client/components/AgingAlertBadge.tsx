@@ -8,6 +8,7 @@ import {
   formatAgeDisplay,
   getIssueAgeHours,
 } from '@/utils/agingAlerts';
+import { extractShortId } from '@/utils/commonUtils';
 
 interface AgingAlertBadgeProps {
   issues: Issue[];
@@ -127,9 +128,7 @@ export function AgingAlertBadge({ issues, onConfigureClick, thresholdConfig }: A
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {agingIssues.slice(0, 10).map(({ issue, ageDisplay, status }) => {
-                    const shortId = issue.id.includes('-') 
-                      ? issue.id.split('-').pop() 
-                      : issue.id;
+                    const shortId = extractShortId(issue.id);
 
                     return (
                       <tr key={issue.id} className="hover:bg-slate-50">
