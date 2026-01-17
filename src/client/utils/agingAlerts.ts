@@ -72,8 +72,12 @@ export function formatAgeDisplay(hours: number): string {
     }
     return `${h}h`;
   } else {
-    const days = hours / 24;
-    return `${days.toFixed(1)}d`;
+    const days = Math.floor(hours / 24);
+    const remainingHours = Math.round(hours - (days * 24));
+    if (remainingHours > 0) {
+      return `${days}d ${remainingHours}h`;
+    }
+    return `${days}d`;
   }
 }
 

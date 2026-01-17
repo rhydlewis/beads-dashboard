@@ -92,9 +92,10 @@ describe('Aging Alerts Utility Functions', () => {
     });
 
     it('should format days correctly', () => {
-      expect(formatAgeDisplay(24)).toBe('1.0d');
-      expect(formatAgeDisplay(48)).toBe('2.0d');
-      expect(formatAgeDisplay(72)).toBe('3.0d');
+      expect(formatAgeDisplay(24)).toBe('1d');
+      expect(formatAgeDisplay(48)).toBe('2d');
+      expect(formatAgeDisplay(72)).toBe('3d');
+      expect(formatAgeDisplay(93.5)).toBe('3d 22h'); // 3 days + 21.5 hours → rounds to 22h
     });
 
     it('should handle edge cases', () => {
@@ -274,8 +275,8 @@ describe('Aging Alerts Utility Functions', () => {
       // Should show hours for recent items
       expect(recentAgingIssue?.ageDisplay).toMatch(/\d+h/);
 
-      // Should show days for older items
-      expect(oldAgingIssue?.ageDisplay).toMatch(/\d+\.\dd/);
+      // Should show days for older items (format: "Xd" or "Xd Yh")
+      expect(oldAgingIssue?.ageDisplay).toMatch(/\d+d/);
     });
   });
 
