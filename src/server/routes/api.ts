@@ -13,7 +13,7 @@ import type {
   UpdateIssueAcceptanceRequest,
   CreateIssueRequest,
   CreateIssueResponse
-} from '@shared/types';
+} from '../../shared/types.js';
 import {
   UpdateIssueDescriptionSchema,
   UpdateIssueStatusSchema,
@@ -21,7 +21,7 @@ import {
   UpdateIssueDesignSchema,
   UpdateIssueAcceptanceSchema,
   CreateIssueSchema,
-} from '@shared/types';
+} from '../../shared/types.js';
 
 export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
   const router = express.Router();

@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import type { Issue } from '@shared/types';
-import { CLI_BUFFER_SIZE } from '@shared/constants';
+import type { Issue } from '../../shared/types.js';
+import { CLI_BUFFER_SIZE } from '../../shared/constants.js';
 
 const execAsync = promisify(exec);
 
