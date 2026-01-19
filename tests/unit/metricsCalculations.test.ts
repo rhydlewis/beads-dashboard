@@ -183,7 +183,7 @@ describe('calculateLeadTime', () => {
 
     const result = calculateLeadTime(issues);
     expect(result).toHaveLength(1);
-    expect(result[0].cycleTime).toBe(2);
+    expect(result[0].cycleTimeDays).toBe(2);
     expect(result[0].id).toBe('closed-1');
   });
 
@@ -198,7 +198,8 @@ describe('calculateLeadTime', () => {
     ];
 
     const result = calculateLeadTime(issues);
-    expect(result[0].cycleTime).toBe(1); // Math.ceil ensures minimum 1 day
+    expect(result[0].cycleTimeHours).toBe(8); // 8 hours
+    expect(result[0].cycleTimeDays).toBeCloseTo(8/24, 2); // ~0.33 days
   });
 
   it('sorts by close date', () => {
@@ -269,7 +270,7 @@ describe('calculateAgingWIP', () => {
     ];
 
     const result = calculateAgingWIP(issues, today);
-    expect(result[0].age).toBe(10);
+    expect(result[0].ageDays).toBe(10);
   });
 
   it('colors based on age thresholds', () => {
@@ -390,14 +391,20 @@ describe('calculateAverageAge', () => {
   const today = new Date('2024-01-15T00:00:00Z');
 
   it('returns 0 for no issues', () => {
-    expect(calculateAverageAge([], today)).toBe(0);
+    const result = calculateAverageAge([], today);
+    expect(result.value).toBe(0);
+    expect(result.unit).toBe('days');
+    expect(result.formatted).toBe('0d');
   });
 
   it('returns 0 for only closed issues', () => {
     const issues: Issue[] = [
       createIssue({ status: 'closed', created_at: '2024-01-01T00:00:00Z' }),
     ];
-    expect(calculateAverageAge(issues, today)).toBe(0);
+    const result = calculateAverageAge(issues, today);
+    expect(result.value).toBe(0);
+    expect(result.unit).toBe('days');
+    expect(result.formatted).toBe('0d');
   });
 
   it('calculates average age correctly', () => {
@@ -408,7 +415,9 @@ describe('calculateAverageAge', () => {
     ];
 
     const avg = calculateAverageAge(issues, today);
-    expect(avg).toBe(5); // (10 + 5 + 0) / 3 = 5
+    expect(avg.value).toBe(120); // (10 + 5 + 0) / 3 = 5 days = 120 hours
+    expect(avg.unit).toBe('days');
+    expect(avg.formatted).toBe('5.0d');
   });
 });
 

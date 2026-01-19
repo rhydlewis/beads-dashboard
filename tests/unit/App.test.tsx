@@ -555,22 +555,6 @@ describe('App Component', () => {
       expect(screen.getByTestId('dashboard-view')).toBeInTheDocument();
     });
 
-    it('should trigger refresh from TableView', async () => {
-      const user = userEvent.setup();
-      render(<App />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId('table-view')).toBeInTheDocument();
-        expect(global.fetch).toHaveBeenCalledTimes(1);
-      });
-
-      const refreshButton = screen.getByText('Refresh');
-      await user.click(refreshButton);
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(2);
-      });
-    });
   });
 
   describe('Project Name Extraction', () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Calculator, RefreshCw, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 import type { Issue } from '@shared/types';
 import {
   AgingThresholdConfig as AgingThresholdConfigType,
@@ -9,6 +9,41 @@ import {
   calculateThresholdsFromPercentiles,
   thresholdToHours,
 } from '@/utils/agingAlerts';
+import { ThresholdInput } from './ThresholdInput';
+import { ThresholdPreview } from './ThresholdPreview';
+import { AutoCalcButton } from './AutoCalcButton';
+import { PercentileSelector } from './PercentileSelector';
+import { QuickSelectButtons } from './QuickSelectButtons';
+
+const GRANULARITY_OPTIONS = [
+  { value: 1, label: '1 hour', unit: 'hours' as const },
+  { value: 2, label: '2 hours', unit: 'hours' as const },
+  { value: 4, label: '4 hours', unit: 'hours' as const },
+  { value: 8, label: '8 hours', unit: 'hours' as const },
+  { value: 12, label: '12 hours', unit: 'hours' as const },
+  { value: 24, label: '1 day', unit: 'hours' as const },
+  { value: 48, label: '2 days', unit: 'days' as const },
+  { value: 72, label: '3 days', unit: 'days' as const },
+  { value: 168, label: '7 days', unit: 'days' as const },
+  { value: 336, label: '14 days', unit: 'days' as const },
+  { value: 720, label: '30 days', unit: 'days' as const },
+];
+
+const WARNING_PERCENTILE_OPTIONS = [
+  { value: 0.75, label: 'P75 (75th percentile)' },
+  { value: 0.85, label: 'P85 (85th percentile)' },
+  { value: 0.90, label: 'P90 (90th percentile)' },
+  { value: 0.95, label: 'P95 (95th percentile)' },
+  { value: 0.99, label: 'P99 (99th percentile)' },
+];
+
+const CRITICAL_PERCENTILE_OPTIONS = [
+  { value: 0.85, label: 'P85 (85th percentile)' },
+  { value: 0.90, label: 'P90 (90th percentile)' },
+  { value: 0.95, label: 'P95 (95th percentile)' },
+  { value: 0.99, label: 'P99 (99th percentile)' },
+  { value: 0.999, label: 'P99.9 (99.9th percentile)' },
+];
 
 interface AgingThresholdConfigProps {
   issues: Issue[];
@@ -132,21 +167,6 @@ export function AgingThresholdConfig({ issues, onClose, onSave }: AgingThreshold
     setConfig({ ...DEFAULT_THRESHOLDS });
   };
 
-  // Granularity options for thresholds
-  const granularityOptions = [
-    { value: 1, label: '1 hour', unit: 'hours' as const },
-    { value: 2, label: '2 hours', unit: 'hours' as const },
-    { value: 4, label: '4 hours', unit: 'hours' as const },
-    { value: 8, label: '8 hours', unit: 'hours' as const },
-    { value: 12, label: '12 hours', unit: 'hours' as const },
-    { value: 24, label: '1 day', unit: 'hours' as const },
-    { value: 48, label: '2 days', unit: 'days' as const },
-    { value: 72, label: '3 days', unit: 'days' as const },
-    { value: 168, label: '7 days', unit: 'days' as const },
-    { value: 336, label: '14 days', unit: 'days' as const },
-    { value: 720, label: '30 days', unit: 'days' as const },
-  ];
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
@@ -191,181 +211,69 @@ export function AgingThresholdConfig({ issues, onClose, onSave }: AgingThreshold
               <div className="space-y-4">
                 {/* Percentile selection */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="percentileWarning" className="block text-xs font-medium text-slate-600 mb-1">
-                      Warning Percentile
-                    </label>
-                    <select
-                      id="percentileWarning"
-                      value={config.autoCalcPercentileWarning}
-                      onChange={(e) => handleInputChange('autoCalcPercentileWarning', parseFloat(e.target.value))}
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value={0.75}>P75 (75th percentile)</option>
-                      <option value={0.85}>P85 (85th percentile)</option>
-                      <option value={0.90}>P90 (90th percentile)</option>
-                      <option value={0.95}>P95 (95th percentile)</option>
-                      <option value={0.99}>P99 (99th percentile)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="percentileCritical" className="block text-xs font-medium text-slate-600 mb-1">
-                      Critical Percentile
-                    </label>
-                    <select
-                      id="percentileCritical"
-                      value={config.autoCalcPercentileCritical}
-                      onChange={(e) => handleInputChange('autoCalcPercentileCritical', parseFloat(e.target.value))}
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value={0.85}>P85 (85th percentile)</option>
-                      <option value={0.90}>P90 (90th percentile)</option>
-                      <option value={0.95}>P95 (95th percentile)</option>
-                      <option value={0.99}>P99 (99th percentile)</option>
-                      <option value={0.999}>P99.9 (99.9th percentile)</option>
-                    </select>
-                  </div>
+                  <PercentileSelector
+                    label="Warning Percentile"
+                    value={config.autoCalcPercentileWarning}
+                    options={WARNING_PERCENTILE_OPTIONS}
+                    onChange={(value) => handleInputChange('autoCalcPercentileWarning', value)}
+                  />
+                  <PercentileSelector
+                    label="Critical Percentile"
+                    value={config.autoCalcPercentileCritical}
+                    options={CRITICAL_PERCENTILE_OPTIONS}
+                    onChange={(value) => handleInputChange('autoCalcPercentileCritical', value)}
+                  />
                 </div>
 
-                <button
+                <AutoCalcButton
+                  isCalculating={isCalculating}
                   onClick={handleAutoCalculate}
-                  disabled={isCalculating}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:bg-blue-400"
-                >
-                  {isCalculating ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Calculator className="w-4 h-4" />
-                  )}
-                  {isCalculating ? 'Calculating...' : 'Calculate Thresholds'}
-                </button>
+                />
               </div>
             ) : (
               <div className="space-y-4">
                 {/* Manual threshold configuration */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Warning Threshold */}
-                  <div>
-                    <label htmlFor="warningThreshold" className="block text-xs font-medium text-slate-600 mb-1">
-                      Warning Threshold
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        id="warningThreshold"
-                        min="0.5"
-                        step="0.5"
-                        value={config.warningThreshold}
-                        onChange={(e) => handleInputChange('warningThreshold', parseFloat(e.target.value))}
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <select
-                        value={config.warningUnit}
-                        onChange={(e) => handleInputChange('warningUnit', e.target.value as 'hours' | 'days')}
-                        className="px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="hours">hours</option>
-                        <option value="days">days</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Critical Threshold */}
-                  <div>
-                    <label htmlFor="criticalThreshold" className="block text-xs font-medium text-slate-600 mb-1">
-                      Critical Threshold
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        id="criticalThreshold"
-                        min="0.5"
-                        step="0.5"
-                        value={config.criticalThreshold}
-                        onChange={(e) => handleInputChange('criticalThreshold', parseFloat(e.target.value))}
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <select
-                        value={config.criticalUnit}
-                        onChange={(e) => handleInputChange('criticalUnit', e.target.value as 'hours' | 'days')}
-                        className="px-3 py-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="hours">hours</option>
-                        <option value="days">days</option>
-                      </select>
-                    </div>
-                  </div>
+                  <ThresholdInput
+                    label="Warning Threshold"
+                    value={config.warningThreshold}
+                    unit={config.warningUnit}
+                    onValueChange={(value) => handleInputChange('warningThreshold', value)}
+                    onUnitChange={(unit) => handleInputChange('warningUnit', unit)}
+                  />
+                  <ThresholdInput
+                    label="Critical Threshold"
+                    value={config.criticalThreshold}
+                    unit={config.criticalUnit}
+                    onValueChange={(value) => handleInputChange('criticalThreshold', value)}
+                    onUnitChange={(unit) => handleInputChange('criticalUnit', unit)}
+                  />
                 </div>
 
                 {/* Quick selection buttons */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-2">Quick Select</label>
-                  <div className="flex flex-wrap gap-2">
-                    {granularityOptions.map((option) => (
-                      <button
-                        key={`${option.value}-${option.unit}`}
-                        onClick={() => {
-                          handleInputChange('warningThreshold', option.value);
-                          handleInputChange('warningUnit', option.unit);
-                        }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                          config.warningThreshold === option.value && config.warningUnit === option.unit
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <QuickSelectButtons
+                  options={GRANULARITY_OPTIONS}
+                  selectedValue={config.warningThreshold}
+                  selectedUnit={config.warningUnit}
+                  onSelect={(value, unit) => {
+                    handleInputChange('warningThreshold', value);
+                    handleInputChange('warningUnit', unit);
+                  }}
+                />
               </div>
             )}
 
             {/* Preview section */}
-            <div className="border-t border-slate-200 pt-4">
-              <h4 className="text-sm font-bold text-slate-700 mb-3">Preview</h4>
-              <p className="text-xs text-slate-500 mb-3">
-                Based on current configuration, these items would be flagged:
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className={`p-3 rounded-lg border ${warningCount > 0 ? 'border-yellow-200 bg-yellow-50' : 'border-slate-200 bg-slate-50'}`}>
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className={`w-4 h-4 ${warningCount > 0 ? 'text-yellow-600' : 'text-yellow-400'}`} />
-                    <div>
-                      <div className="text-sm font-medium text-slate-700">Warning Items</div>
-                      <div className={`text-lg font-bold ${warningCount > 0 ? 'text-yellow-700' : 'text-slate-400'}`}>
-                        {warningCount}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`p-3 rounded-lg border ${criticalCount > 0 ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
-                  <div className="flex items-center gap-2">
-                    <AlertOctagon className={`w-4 h-4 ${criticalCount > 0 ? 'text-red-600' : 'text-red-400'}`} />
-                    <div>
-                      <div className="text-sm font-medium text-slate-700">Critical Items</div>
-                      <div className={`text-lg font-bold ${criticalCount > 0 ? 'text-red-700' : 'text-slate-400'}`}>
-                        {criticalCount}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 p-3 bg-slate-50 rounded-lg text-xs">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-slate-600">Effective Thresholds:</span>
-                </div>
-                <div className="text-slate-500">
-                  Warning: {previewConfig.warningThreshold} {previewConfig.warningUnit} ({thresholdToHours(previewConfig.warningThreshold, previewConfig.warningUnit)} hours) • 
-                  Critical: {previewConfig.criticalThreshold} {previewConfig.criticalUnit} ({thresholdToHours(previewConfig.criticalThreshold, previewConfig.criticalUnit)} hours)
-                </div>
-              </div>
-            </div>
+            <ThresholdPreview
+              warningCount={warningCount}
+              criticalCount={criticalCount}
+              warningThreshold={previewConfig.warningThreshold}
+              warningUnit={previewConfig.warningUnit}
+              criticalThreshold={previewConfig.criticalThreshold}
+              criticalUnit={previewConfig.criticalUnit}
+              warningHours={thresholdToHours(previewConfig.warningThreshold, previewConfig.warningUnit)}
+              criticalHours={thresholdToHours(previewConfig.criticalThreshold, previewConfig.criticalUnit)}
+            />
           </div>
         </div>
 

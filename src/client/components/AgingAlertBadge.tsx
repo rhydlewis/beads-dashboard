@@ -7,6 +7,7 @@ import {
   getAgingIssues,
 } from '@/utils/agingAlerts';
 import { extractShortId } from '@/utils/commonUtils';
+import { AGING_ALERT_PREVIEW_LIMIT } from '@shared/constants';
 
 interface AgingAlertBadgeProps {
   issues: Issue[];
@@ -125,7 +126,7 @@ export function AgingAlertBadge({ issues, onConfigureClick, thresholdConfig }: A
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {agingIssues.slice(0, 10).map(({ issue, ageDisplay, status }) => {
+                  {agingIssues.slice(0, AGING_ALERT_PREVIEW_LIMIT).map(({ issue, ageDisplay, status }) => {
                     const shortId = extractShortId(issue.id);
 
                     return (

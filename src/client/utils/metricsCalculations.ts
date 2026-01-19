@@ -8,6 +8,7 @@ import type {
   TimeGranularity,
   GranularityConfig,
 } from '@shared/types';
+import { CFD_SUB_DAILY_LIMIT_DAYS } from '@shared/constants';
 import { GRANULARITY_OPTIONS } from '@shared/types';
 import { calculatePercentile as calcPercentile } from './commonUtils';
 
@@ -206,11 +207,10 @@ export function calculateCumulativeFlow(
 
   const config = getGranularityConfig(granularity);
 
-  // For hourly/4-hourly, limit to last 30 days
-  const MAX_DAYS = 30;
+  // For hourly/4-hourly, limit to last N days
   const isSubDaily = config.hoursPerBucket < 24;
   const limitTimestamp = isSubDaily
-    ? today.getTime() - (MAX_DAYS * 24 * 60 * 60 * 1000)
+    ? today.getTime() - (CFD_SUB_DAILY_LIMIT_DAYS * 24 * 60 * 60 * 1000)
     : 0;
 
   const activityByBucket: Record<string, { created: number; closed: number }> = {};

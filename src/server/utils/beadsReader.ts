@@ -3,6 +3,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import type { Issue } from '@shared/types';
+import { CLI_BUFFER_SIZE } from '@shared/constants';
 
 const execAsync = promisify(exec);
 
@@ -24,7 +25,7 @@ export async function readBeadsData(projectRoot: string): Promise<Issue[]> {
     // This ensures we get the latest data, not stale JSONL file
     const { stdout, stderr } = await execAsync('bd list --json --status=all', {
       cwd: projectRoot,
-      maxBuffer: 10 * 1024 * 1024 // 10MB buffer for large datasets
+      maxBuffer: CLI_BUFFER_SIZE
     });
 
     if (stderr) {
