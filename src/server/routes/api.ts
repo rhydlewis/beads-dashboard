@@ -10,7 +10,9 @@ import type {
   UpdateIssueStatusRequest,
   UpdateIssuePriorityRequest,
   UpdateIssueDesignRequest,
-  UpdateIssueAcceptanceRequest
+  UpdateIssueAcceptanceRequest,
+  CreateIssueRequest,
+  CreateIssueResponse
 } from '@shared/types';
 import {
   UpdateIssueDescriptionSchema,
@@ -18,6 +20,7 @@ import {
   UpdateIssuePrioritySchema,
   UpdateIssueDesignSchema,
   UpdateIssueAcceptanceSchema,
+  CreateIssueSchema,
 } from '@shared/types';
 
 export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
@@ -34,6 +37,110 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Failed to read data' });
+    }
+  });
+
+  /**
+   * POST /api/issues
+   * Creates a new issue via bd create command
+   */
+  router.post('/issues', async (req: Request, res: Response) => {
+    console.log('[API] Creating new issue with body:', req.body);
+
+    // Validate input
+    try {
+      CreateIssueSchema.parse(req.body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.issues[0].message });
+      }
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
+
+    const { title, type, priority = 2, description } = req.body as CreateIssueRequest;
+
+    // Build bd create command
+    let command = `bd create --title="${title.replace(/"/g, '\\"')}" --type=${type} --priority=${priority}`;
+
+    let tempFile: string | null = null;
+    if (description) {
+      // Use temp file for description to avoid shell escaping issues
+      tempFile = path.join(os.tmpdir(), `beads-create-${Date.now()}-${process.pid}.txt`);
+      try {
+        fs.writeFileSync(tempFile, description, { mode: 0o600 });
+        command += ` --body-file="${tempFile}"`;
+      } catch (error) {
+        console.error('[API] Failed to write temp file:', error);
+        return res.status(500).json({ error: 'Failed to prepare issue description' });
+      }
+    }
+
+    try {
+      const output = await new Promise<string>((resolve, reject) => {
+        exec(command, { cwd: projectRoot }, (error, stdout, stderr) => {
+          // Always cleanup temp file
+          if (tempFile) {
+            try {
+              fs.unlinkSync(tempFile);
+            } catch (cleanupError) {
+              console.error('[API] Failed to cleanup temp file:', cleanupError);
+            }
+          }
+
+          if (error) {
+            console.error(`[API] bd create error: ${error}`);
+            console.error(`[API] stderr: ${stderr}`);
+            return reject(new Error(stderr || error.message));
+          }
+
+          console.log(`[API] bd create stdout: ${stdout}`);
+          resolve(stdout);
+        });
+      });
+
+      // Parse the issue ID from the output
+      // bd create output format: "✓ Created issue: <issue-id>"
+      const match = output.match(/Created issue: ([\w-]+)/);
+      const issueId = match ? match[1] : undefined;
+
+      console.log(`[API] Successfully created issue: ${issueId}`);
+
+      // Fetch the created issue data
+      let issue = undefined;
+      if (issueId) {
+        try {
+          const allIssues = await readBeadsData(projectRoot);
+          issue = allIssues.find(i => i.id === issueId);
+        } catch (error) {
+          console.error('[API] Failed to fetch created issue:', error);
+        }
+      }
+
+      const response: CreateIssueResponse = {
+        success: true,
+        issueId,
+        issue,
+      };
+
+      res.json(response);
+
+      // Emit refresh so clients reload from database
+      emitRefresh();
+    } catch (error) {
+      // Clean up temp file if it still exists
+      if (tempFile) {
+        try {
+          if (fs.existsSync(tempFile)) {
+            fs.unlinkSync(tempFile);
+          }
+        } catch (cleanupError) {
+          console.error('[API] Failed to cleanup temp file on error:', cleanupError);
+        }
+      }
+
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`[API] Error creating issue: ${errorMessage}`);
+      res.status(500).json({ error: errorMessage });
     }
   });
 
