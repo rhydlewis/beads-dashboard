@@ -20,11 +20,13 @@ import {
   Settings,
   Eye,
   EyeOff,
+  PlusCircle,
 } from 'lucide-react';
-import type { Issue, IssueStatus, Priority } from '@shared/types';
+import type { Issue, IssueStatus, Priority, CreateIssueRequest } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
 import FilterDropdown from './FilterDropdown';
 import IssueDetailModal from './IssueDetailModal';
+import IssueCreationModal from './IssueCreationModal';
 
 interface AllIssuesTableProps {
   issues: Issue[];
@@ -91,6 +93,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
   const [childFilter, setChildFilter] = useState<string | null>(null);
+  const [showCreationModal, setShowCreationModal] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<IssueStatus[]>(() => {
     const saved = localStorage.getItem('beads-filter-status');
@@ -436,6 +439,22 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
     }
   };
 
+  const handleCreateIssue = async (request: CreateIssueRequest) => {
+    const res = await fetch('/api/issues', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to create issue');
+    }
+
+    const response = await res.json();
+    return response;
+  };
+
   const handleStatusUpdate = async (issueId: string, newStatus: IssueStatus) => {
     setUpdatingStatus(issueId);
     try {
@@ -587,15 +606,24 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
     <>
       <div className="card overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50/50">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Filter by ID, Title, Status, Type, or Priority..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-            />
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Filter by ID, Title, Status, Type, or Priority..."
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+              />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            </div>
+            <button
+              onClick={() => setShowCreationModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              <PlusCircle className="w-4 h-4" />
+              New Issue
+            </button>
           </div>
         </div>
 
@@ -850,6 +878,13 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
           onToggleEditing={setIsEditing}
           onChangeEditValue={setEditValue}
           onSave={handleSave}
+        />
+      )}
+
+      {showCreationModal && (
+        <IssueCreationModal
+          onClose={() => setShowCreationModal(false)}
+          onSubmit={handleCreateIssue}
         />
       )}
     </>

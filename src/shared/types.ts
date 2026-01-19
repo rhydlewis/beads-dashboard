@@ -126,6 +126,20 @@ export interface UpdateIssuePriorityRequest {
   priority: Priority;
 }
 
+export interface CreateIssueRequest {
+  title: string;
+  type: IssueType;
+  priority?: Priority;
+  description?: string;
+}
+
+export interface CreateIssueResponse {
+  success: boolean;
+  issueId?: string;
+  issue?: Issue;
+  error?: string;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -156,6 +170,13 @@ export const UpdateIssueStatusSchema = z.object({
 
 export const UpdateIssuePrioritySchema = z.object({
   priority: z.number().int().min(0).max(4, 'Priority must be between 0 and 4'),
+});
+
+export const CreateIssueSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(MAX_TEXT_LENGTH, 'Title must be less than 100KB'),
+  type: z.enum(['task', 'bug', 'feature', 'epic']),
+  priority: z.number().int().min(0).max(4, 'Priority must be between 0 and 4').optional(),
+  description: z.string().max(MAX_TEXT_LENGTH, 'Description must be less than 100KB').optional(),
 });
 
 // Priority display labels
