@@ -12,7 +12,7 @@ import {
 import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
 import FilterDropdown from './FilterDropdown';
-import IssueDetailModal from './IssueDetailModal';
+import IssueViewModal from './IssueViewModal';
 
 interface EpicsTableProps {
   issues: Issue[];
@@ -62,9 +62,6 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
     direction: 'asc',
   }));
   const [activeDescription, setActiveDescription] = useState<Issue | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState('');
-  const [saving, setSaving] = useState(false);
 
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() => {
     const saved = localStorage.getItem('beads-epics-column-config');
@@ -259,32 +256,10 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
 
   const openDescription = (issue: Issue) => {
     setActiveDescription(issue);
-    setEditValue(issue.description || '');
-    setIsEditing(false);
   };
 
   const closeDescription = () => {
     setActiveDescription(null);
-    setIsEditing(false);
-    setSaving(false);
-  };
-
-  const handleSave = async () => {
-    if (!activeDescription) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/issues/${activeDescription.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: editValue }),
-      });
-      if (!res.ok) throw new Error('Failed to update');
-      closeDescription();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to save description');
-      setSaving(false);
-    }
   };
 
   const handleResizeStart = (columnKey: string, e: React.MouseEvent) => {
@@ -572,15 +547,13 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
       </div>
 
       {activeDescription && (
-        <IssueDetailModal
+        <IssueViewModal
           issue={activeDescription}
-          isEditing={isEditing}
-          editValue={editValue}
-          saving={saving}
           onClose={closeDescription}
-          onToggleEditing={setIsEditing}
-          onChangeEditValue={setEditValue}
-          onSave={handleSave}
+          onUpdate={() => {
+            // Table will auto-refresh via Socket.IO when data changes
+            // No manual refresh needed
+          }}
         />
       )}
     </>
