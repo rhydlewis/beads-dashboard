@@ -44,6 +44,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@types/dompurify": "^3.0.5",
+    "@uiw/react-md-editor": "^4.0.11",
     "chokidar": "^5.0.0",
     "cors": "^2.8.5",
     "dompurify": "^3.3.1",

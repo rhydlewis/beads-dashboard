@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import MDEditor from '@uiw/react-md-editor';
 import type { IssueType, Priority, CreateIssueRequest } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
 
@@ -19,6 +20,24 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
   // Validation states
   const [titleError, setTitleError] = useState<string | null>(null);
   const [typeError, setTypeError] = useState<string | null>(null);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
+
+  // Constants
+  const MAX_DESCRIPTION_LENGTH = 100 * 1024; // 100KB
+
+  // Check description length
+  useEffect(() => {
+    if (description) {
+      const byteLength = new Blob([description]).size;
+      if (byteLength > MAX_DESCRIPTION_LENGTH) {
+        setDescriptionError(`Description exceeds 100KB limit (current: ${Math.round(byteLength / 1024)}KB)`);
+      } else {
+        setDescriptionError(null);
+      }
+    } else {
+      setDescriptionError(null);
+    }
+  }, [description]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +55,9 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
     }
     if (!type) {
       setTypeError('Type is required');
+      hasError = true;
+    }
+    if (descriptionError) {
       hasError = true;
     }
 
@@ -147,17 +169,30 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
 
             {/* Description field */}
             <div>
-              <label htmlFor="issue-description" className="block text-sm font-medium text-slate-700 mb-1">
-                Description <span className="text-slate-400 text-xs">(optional)</span>
+              <label htmlFor="issue-description" className="block text-sm font-medium text-slate-700 mb-2">
+                Description <span className="text-slate-400 text-xs">(optional, supports Markdown)</span>
               </label>
-              <textarea
-                id="issue-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full h-32 px-3 py-2 border border-slate-300 rounded-md text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
-                placeholder="Enter issue description (supports Markdown)..."
-                disabled={isSubmitting}
-              />
+              <div data-color-mode="light">
+                <MDEditor
+                  value={description}
+                  onChange={(val) => setDescription(val || '')}
+                  preview="live"
+                  height={300}
+                  visibleDragbar={false}
+                  textareaProps={{
+                    placeholder: 'Enter issue description with Markdown support...',
+                    disabled: isSubmitting,
+                  }}
+                />
+              </div>
+              {descriptionError && (
+                <p className="text-red-500 text-xs mt-1">{descriptionError}</p>
+              )}
+              {description && !descriptionError && (
+                <p className="text-slate-500 text-xs mt-1">
+                  {Math.round(new Blob([description]).size / 1024)}KB / 100KB
+                </p>
+              )}
             </div>
 
             {/* Error message */}
