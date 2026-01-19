@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import type { Issue, TimeGranularity } from '@shared/types';
+import { Plus } from 'lucide-react';
+import type { Issue, TimeGranularity, CreateIssueRequest } from '@shared/types';
 import { useMetrics } from '@/hooks/useMetrics';
 import DashboardView from '@/components/DashboardView';
 import TableView from '@/components/TableView';
@@ -9,6 +10,7 @@ import { AgingAlertList } from '@/components/AgingAlertList';
 import KanbanBoard from '@/components/KanbanBoard';
 import { AgingThresholdConfig } from '@/components/AgingThresholdConfig';
 import { AgingThresholdConfig as AgingThresholdConfigType, loadThresholdConfig } from '@/utils/agingAlerts';
+import IssueCreationModal from '@/components/IssueCreationModal';
 
 function App() {
   const [parsedIssues, setParsedIssues] = useState<Issue[]>([]);
@@ -24,6 +26,7 @@ function App() {
   });
   const [thresholdConfig, setThresholdConfig] = useState<AgingThresholdConfigType>(() => loadThresholdConfig());
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showCreationModal, setShowCreationModal] = useState(false);
 
   const metrics = useMetrics(parsedIssues, granularity);
 
@@ -42,6 +45,21 @@ function App() {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setLoading(false);
     }
+  };
+
+  const handleCreateIssue = async (request: CreateIssueRequest) => {
+    const res = await fetch('/api/issues', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Failed to create issue');
+    }
+
+    // Data will auto-refresh via Socket.IO
   };
 
   useEffect(() => {
@@ -105,6 +123,13 @@ function App() {
             <div className="text-xs text-slate-400">
               {loading ? 'Connecting...' : 'Connected'}
             </div>
+            <button
+              onClick={() => setShowCreationModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Issue
+            </button>
             <AgingAlertBadge
               issues={parsedIssues}
               onConfigureClick={() => setShowConfigModal(true)}
@@ -196,6 +221,14 @@ function App() {
             // Force re-render of components that depend on config
             setShowConfigModal(false);
           }}
+        />
+      )}
+
+      {/* Issue Creation Modal */}
+      {showCreationModal && (
+        <IssueCreationModal
+          onClose={() => setShowCreationModal(false)}
+          onSubmit={handleCreateIssue}
         />
       )}
     </div>
