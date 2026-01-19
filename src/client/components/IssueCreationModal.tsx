@@ -16,6 +16,8 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createAnother, setCreateAnother] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Validation states
   const [titleError, setTitleError] = useState<string | null>(null);
@@ -38,6 +40,16 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
       setDescriptionError(null);
     }
   }, [description]);
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    // Keep type and priority for consistency in batch mode
+    setTitleError(null);
+    setTypeError(null);
+    setDescriptionError(null);
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +78,7 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
     }
 
     setIsSubmitting(true);
+    setSuccessMessage(null);
 
     try {
       const request: CreateIssueRequest = {
@@ -76,7 +89,17 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
       };
 
       await onSubmit(request);
-      onClose();
+
+      if (createAnother) {
+        // Batch mode: show success message, reset form, keep modal open
+        setSuccessMessage(`✓ Issue "${title.trim()}" created successfully`);
+        resetForm();
+        // Auto-hide success message after 3 seconds
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        // Normal mode: close modal
+        onClose();
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create issue';
       setError(errorMessage);
@@ -195,6 +218,13 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
               )}
             </div>
 
+            {/* Success message */}
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm">
+                {successMessage}
+              </div>
+            )}
+
             {/* Error message */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
@@ -203,22 +233,39 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
             )}
           </div>
 
-          <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-lg flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors"
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Creating...' : 'Create Issue'}
-            </button>
+          <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-lg">
+            {/* Create Another checkbox */}
+            <div className="mb-3 flex items-center">
+              <input
+                id="create-another"
+                type="checkbox"
+                checked={createAnother}
+                onChange={(e) => setCreateAnother(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
+                disabled={isSubmitting}
+              />
+              <label htmlFor="create-another" className="ml-2 text-sm text-slate-700">
+                Create another issue after this one
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Creating...' : 'Create Issue'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
