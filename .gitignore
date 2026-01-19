@@ -28,3 +28,6 @@ Thumbs.db
 .beads/daemon.log
 .beads/daemon-error
 .beads/last-touched
+
+# Git worktrees
+worktrees/
