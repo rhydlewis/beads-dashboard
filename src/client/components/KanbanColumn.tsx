@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Settings, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Issue, IssueStatus } from '@shared/types';
+import { AUTO_HIDE_OPTIONS } from '@shared/constants';
 import KanbanCard from './KanbanCard';
 
 interface KanbanColumnProps {
@@ -10,8 +11,8 @@ interface KanbanColumnProps {
   issues: Issue[];
   onCardClick: (issue: Issue) => void;
   wipLimit?: number;
-  autoHideDays?: number | null;
-  onAutoHideDaysChange?: (days: number | null) => void;
+  autoHideHours?: number | null;
+  onAutoHideHoursChange?: (hours: number | null) => void;
   hiddenCount?: number;
   showAllHidden?: boolean;
   onShowAllHiddenToggle?: (show: boolean) => void;
@@ -22,8 +23,8 @@ function KanbanColumn({
   issues,
   onCardClick,
   wipLimit,
-  autoHideDays,
-  onAutoHideDaysChange,
+  autoHideHours,
+  onAutoHideHoursChange,
   hiddenCount,
   showAllHidden,
   onShowAllHiddenToggle,
@@ -82,6 +83,16 @@ function KanbanColumn({
   const count = issues.length;
   const isOverLimit = wipLimit !== undefined && count >= wipLimit;
 
+  // Format hours into human-readable label
+  const formatAutoHideLabel = (hours: number): string => {
+    if (hours < 24) {
+      return `${hours} hour${hours !== 1 ? 's' : ''}`;
+    } else {
+      const days = hours / 24;
+      return `${days} day${days !== 1 ? 's' : ''}`;
+    }
+  };
+
   // Collapsed view - vertical header
   if (isCollapsed) {
     return (
@@ -130,7 +141,7 @@ function KanbanColumn({
             {isOverLimit && (
               <span className="text-xs font-medium text-red-600">⚠️</span>
             )}
-            {onAutoHideDaysChange && (
+            {onAutoHideHoursChange && (
               <div className="relative">
                 <button
                   onClick={(e) => {
@@ -150,18 +161,18 @@ function KanbanColumn({
                     <div className="p-2">
                       <div className="text-xs font-semibold text-slate-700 mb-2">Auto-hide cards older than:</div>
                       <button
-                        onClick={() => { onAutoHideDaysChange(null); setShowSettings(false); }}
-                        className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-slate-100 ${autoHideDays === null ? 'bg-blue-50 text-blue-700' : 'text-slate-700'}`}
+                        onClick={() => { onAutoHideHoursChange(null); setShowSettings(false); }}
+                        className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-slate-100 ${autoHideHours === null ? 'bg-blue-50 text-blue-700' : 'text-slate-700'}`}
                       >
                         Disabled (show all)
                       </button>
-                      {[7, 14, 30, 90].map((days) => (
+                      {AUTO_HIDE_OPTIONS.map((hours) => (
                         <button
-                          key={days}
-                          onClick={() => { onAutoHideDaysChange(days); setShowSettings(false); }}
-                          className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-slate-100 ${autoHideDays === days ? 'bg-blue-50 text-blue-700' : 'text-slate-700'}`}
+                          key={hours}
+                          onClick={() => { onAutoHideHoursChange(hours); setShowSettings(false); }}
+                          className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-slate-100 ${autoHideHours === hours ? 'bg-blue-50 text-blue-700' : 'text-slate-700'}`}
                         >
-                          {days} days
+                          {formatAutoHideLabel(hours)}
                         </button>
                       ))}
                     </div>

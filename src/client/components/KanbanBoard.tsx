@@ -31,9 +31,9 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
     return saved || '';
   });
 
-  // Auto-hide settings for Done column
-  const [autoHideDays, setAutoHideDays] = useState<number | null>(() => {
-    const saved = localStorage.getItem('beads-done-auto-hide-days');
+  // Auto-hide settings for Done column (in hours)
+  const [autoHideHours, setAutoHideHours] = useState<number | null>(() => {
+    const saved = localStorage.getItem('beads-done-auto-hide-hours');
     return saved ? parseInt(saved, 10) : null;
   });
 
@@ -55,12 +55,12 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
 
   // Persist auto-hide days to localStorage
   useEffect(() => {
-    if (autoHideDays === null) {
-      localStorage.removeItem('beads-done-auto-hide-days');
+    if (autoHideHours === null) {
+      localStorage.removeItem('beads-done-auto-hide-hours');
     } else {
-      localStorage.setItem('beads-done-auto-hide-days', autoHideDays.toString());
+      localStorage.setItem('beads-done-auto-hide-hours', autoHideHours.toString());
     }
-  }, [autoHideDays]);
+  }, [autoHideHours]);
 
   // Clear optimistic updates only when they're reflected in real data
   useEffect(() => {
@@ -156,13 +156,13 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
   const today = new Date();
   const visibleIssues = filteredIssues.filter(issue => {
     // Only filter closed issues if auto-hide is enabled and not showing all
-    if (issue.status === 'closed' && autoHideDays !== null && !showAllDone) {
+    if (issue.status === 'closed' && autoHideHours !== null && !showAllDone) {
       if (!issue.closed_at) return true; // Keep if no closed_at date
 
       const closedDate = new Date(issue.closed_at);
-      const daysSinceClosed = (today.getTime() - closedDate.getTime()) / (1000 * 60 * 60 * 24);
+      const hoursSinceClosed = (today.getTime() - closedDate.getTime()) / (1000 * 60 * 60);
 
-      return daysSinceClosed <= autoHideDays;
+      return hoursSinceClosed <= autoHideHours;
     }
     return true;
   });
@@ -333,8 +333,8 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
                 issues={issuesByStatus[status] || []}
                 onCardClick={handleCardClick}
                 wipLimit={wipLimits[status]}
-                autoHideDays={status === 'closed' ? autoHideDays : undefined}
-                onAutoHideDaysChange={status === 'closed' ? setAutoHideDays : undefined}
+                autoHideHours={status === 'closed' ? autoHideHours : undefined}
+                onAutoHideHoursChange={status === 'closed' ? setAutoHideHours : undefined}
                 hiddenCount={status === 'closed' ? hiddenClosedCount : undefined}
                 showAllHidden={status === 'closed' ? showAllDone : undefined}
                 onShowAllHiddenToggle={status === 'closed' ? setShowAllDone : undefined}
