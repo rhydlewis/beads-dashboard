@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import type { IssueType, Priority, CreateIssueRequest } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
+import { useTheme } from '@/hooks/useTheme';
 
 interface IssueCreationModalProps {
   onClose: () => void;
@@ -10,6 +11,7 @@ interface IssueCreationModalProps {
 }
 
 function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
+  const { isDark } = useTheme();
   const [title, setTitle] = useState('');
   const [type, setType] = useState<IssueType>('task');
   const [priority, setPriority] = useState<Priority>(2); // Default to Medium
@@ -110,13 +112,13 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-start p-6 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-start p-6 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">Create New Issue</h3>
-            <p className="text-sm text-slate-500 mt-1">Fill in the details to create a new issue</p>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Create New Issue</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Fill in the details to create a new issue</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1" disabled={isSubmitting}>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors p-1" disabled={isSubmitting}>
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -125,7 +127,7 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
           <div className="p-6 overflow-y-auto flex-1 space-y-4">
             {/* Title field */}
             <div>
-              <label htmlFor="issue-title" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="issue-title" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Title <span className="text-red-500">*</span>
               </label>
               <input
@@ -136,18 +138,18 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
                   setTitle(e.target.value);
                   if (titleError) setTitleError(null);
                 }}
-                className={`w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none ${
-                  titleError ? 'border-red-500' : 'border-slate-300'
+                className={`w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none ${
+                  titleError ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'
                 }`}
                 placeholder="Enter issue title..."
                 disabled={isSubmitting}
               />
-              {titleError && <p className="text-red-500 text-xs mt-1">{titleError}</p>}
+              {titleError && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{titleError}</p>}
             </div>
 
             {/* Type field */}
             <div>
-              <label htmlFor="issue-type" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="issue-type" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Type <span className="text-red-500">*</span>
               </label>
               <select
@@ -157,8 +159,8 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
                   setType(e.target.value as IssueType);
                   if (typeError) setTypeError(null);
                 }}
-                className={`w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none ${
-                  typeError ? 'border-red-500' : 'border-slate-300'
+                className={`w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none ${
+                  typeError ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'
                 }`}
                 disabled={isSubmitting}
               >
@@ -167,19 +169,19 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
                 <option value="feature">Feature</option>
                 <option value="epic">Epic</option>
               </select>
-              {typeError && <p className="text-red-500 text-xs mt-1">{typeError}</p>}
+              {typeError && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{typeError}</p>}
             </div>
 
             {/* Priority field */}
             <div>
-              <label htmlFor="issue-priority" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="issue-priority" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Priority
               </label>
               <select
                 id="issue-priority"
                 value={priority}
                 onChange={(e) => setPriority(parseInt(e.target.value) as Priority)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
                 disabled={isSubmitting}
               >
                 <option value="0">{PRIORITY_LABELS[0]} (P0)</option>
@@ -192,10 +194,10 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
 
             {/* Description field */}
             <div>
-              <label htmlFor="issue-description" className="block text-sm font-medium text-slate-700 mb-2">
-                Description <span className="text-slate-400 text-xs">(optional, supports Markdown)</span>
+              <label htmlFor="issue-description" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Description <span className="text-slate-400 dark:text-slate-500 text-xs">(optional, supports Markdown)</span>
               </label>
-              <div data-color-mode="light">
+              <div data-color-mode={isDark ? 'dark' : 'light'}>
                 <MDEditor
                   value={description}
                   onChange={(val) => setDescription(val || '')}
@@ -209,10 +211,10 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
                 />
               </div>
               {descriptionError && (
-                <p className="text-red-500 text-xs mt-1">{descriptionError}</p>
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1">{descriptionError}</p>
               )}
               {description && !descriptionError && (
-                <p className="text-slate-500 text-xs mt-1">
+                <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
                   {Math.round(new Blob([description]).size / 1024)}KB / 100KB
                 </p>
               )}
@@ -220,20 +222,20 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
 
             {/* Success message */}
             {successMessage && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-md text-sm">
                 {successMessage}
               </div>
             )}
 
             {/* Error message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
           </div>
 
-          <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-lg">
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 rounded-b-lg">
             {/* Create Another checkbox */}
             <div className="mb-3 flex items-center">
               <input
@@ -241,10 +243,10 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
                 type="checkbox"
                 checked={createAnother}
                 onChange={(e) => setCreateAnother(e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 border-slate-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 dark:bg-slate-700"
                 disabled={isSubmitting}
               />
-              <label htmlFor="create-another" className="ml-2 text-sm text-slate-700">
+              <label htmlFor="create-another" className="ml-2 text-sm text-slate-700 dark:text-slate-300">
                 Create another issue after this one
               </label>
             </div>
@@ -253,7 +255,7 @@ function IssueCreationModal({ onClose, onSubmit }: IssueCreationModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors"
+                className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
                 disabled={isSubmitting}
               >
                 Cancel

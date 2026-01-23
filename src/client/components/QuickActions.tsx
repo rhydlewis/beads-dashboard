@@ -44,7 +44,7 @@ export default function QuickActions({ issue }: QuickActionsProps) {
         <button
           onClick={() => handleStatusUpdate('in_progress')}
           disabled={updatingStatus}
-          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
+          className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors disabled:opacity-50"
           title="Start Progress"
         >
           <Play className="w-4 h-4" />
@@ -54,7 +54,7 @@ export default function QuickActions({ issue }: QuickActionsProps) {
         <button
           onClick={() => handleStatusUpdate('closed')}
           disabled={updatingStatus}
-          className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+          className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors disabled:opacity-50"
           title="Close Issue"
         >
           <Check className="w-4 h-4" />

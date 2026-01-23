@@ -153,19 +153,19 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200" onClick={handleClose}>
-      <div 
-        className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200"
+      <div
+        className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-start p-6 pb-2 border-b border-slate-100">
+        <div className="flex justify-between items-start p-6 pb-2 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">{issue.title}</h3>
-            <p className="text-sm text-slate-500 font-mono mt-1">{issue.id}</p>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">{issue.title}</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-1">{issue.id}</p>
           </div>
           <button
             onClick={handleClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+            className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors p-1"
             aria-label="Close modal"
           >
             <X className="w-6 h-6" />
@@ -173,13 +173,13 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center px-6 border-b border-slate-200 bg-slate-50/50">
+        <div className="flex items-center px-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
           <button
             onClick={() => handleTabChange('description')}
             className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'description'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:border-slate-500'
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -189,8 +189,8 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
             onClick={() => handleTabChange('design')}
             className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'design'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:border-slate-500'
             }`}
           >
             <Palette className="w-4 h-4" />
@@ -200,8 +200,8 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
             onClick={() => handleTabChange('acceptance')}
             className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'acceptance'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:border-slate-500'
             }`}
           >
             <CheckSquare className="w-4 h-4" />
@@ -213,7 +213,7 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
         <div className="p-6 overflow-y-auto flex-1 min-h-[300px]">
           {isEditing ? (
             <textarea
-              className="w-full h-full min-h-[300px] p-4 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none resize-none"
+              className="w-full h-full min-h-[300px] p-4 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-mono bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none resize-none"
               value={editValue}
               onChange={(e) => {
                 setEditValue(e.target.value);
@@ -225,24 +225,24 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
             <div className="relative group">
                <button
                   onClick={startEditing}
-                  className="absolute top-0 right-0 p-2 text-slate-400 hover:text-blue-600 bg-white/50 hover:bg-white rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                  className="absolute top-0 right-0 p-2 text-slate-400 hover:text-blue-600 bg-white/50 hover:bg-white dark:bg-slate-800/50 dark:hover:bg-slate-800 dark:text-slate-500 dark:hover:text-blue-400 rounded-md transition-colors opacity-0 group-hover:opacity-100"
                   title="Edit"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
               {getFieldValue(activeTab) ? (
                 <div
-                  className="prose prose-sm max-w-none text-slate-700"
+                  className="prose prose-sm max-w-none text-slate-700 dark:text-slate-300 dark:prose-invert"
                   dangerouslySetInnerHTML={{
                     __html: DOMPurify.sanitize(marked.parse(getFieldValue(activeTab)) as string)
                   }}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-slate-500">
                   <p className="italic mb-4">No {activeTab.replace('_', ' ')} provided.</p>
-                  <button 
+                  <button
                     onClick={startEditing}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-md text-sm font-medium transition-colors border border-slate-200"
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md text-sm font-medium transition-colors border border-slate-200 dark:border-slate-600 dark:text-slate-300"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     Add Content
@@ -255,13 +255,13 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
 
         {/* Footer */}
         {isEditing && (
-          <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-lg flex justify-end gap-3">
-             <div className="flex-1 flex items-center text-xs text-amber-600 font-medium">
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 rounded-b-lg flex justify-end gap-3">
+             <div className="flex-1 flex items-center text-xs text-amber-600 dark:text-amber-400 font-medium">
                 {hasUnsavedChanges && <span>● Unsaved changes</span>}
              </div>
             <button
               onClick={handleCancel}
-              className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors"
+              className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
               disabled={saving}
             >
               Cancel
