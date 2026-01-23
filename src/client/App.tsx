@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { Plus } from 'lucide-react';
+import { Plus, Sun, Moon } from 'lucide-react';
 import type { Issue, TimeGranularity, CreateIssueRequest } from '@shared/types';
 import { useMetrics } from '@/hooks/useMetrics';
+import { useTheme } from '@/hooks/useTheme';
 import DashboardView from '@/components/DashboardView';
 import TableView from '@/components/TableView';
 import { AgingAlertBadge } from '@/components/AgingAlertBadge';
@@ -28,6 +29,7 @@ function App() {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showCreationModal, setShowCreationModal] = useState(false);
 
+  const { isDark, toggle: toggleTheme } = useTheme();
   const metrics = useMetrics(parsedIssues, granularity);
 
   const fetchData = async () => {
@@ -109,20 +111,27 @@ function App() {
       <header className="mb-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
               {projectName && (
-                <span className="text-slate-500 font-normal">{projectName} / </span>
+                <span className="text-slate-500 dark:text-slate-400 font-normal">{projectName} / </span>
               )}
               Beads Performance Dashboard
             </h1>
-            <p className="text-slate-500 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
               Live View • {activeIssuesCount} issues loaded
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-slate-400 dark:text-slate-500">
               {loading ? 'Connecting...' : 'Connected'}
             </div>
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
             <button
               onClick={() => setShowCreationModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -139,12 +148,12 @@ function App() {
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-4 border-b border-slate-200">
+        <div className="flex space-x-4 border-b border-slate-200 dark:border-slate-700">
           <button
             className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
               activeTab === 'table'
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
             onClick={() => setActiveTab('table')}
           >
@@ -153,8 +162,8 @@ function App() {
           <button
             className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
               activeTab === 'board'
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
             onClick={() => setActiveTab('board')}
           >
@@ -163,8 +172,8 @@ function App() {
           <button
             className={`pb-2 px-1 text-sm font-medium ${
               activeTab === 'dashboard'
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
             onClick={() => setActiveTab('dashboard')}
           >
@@ -173,8 +182,8 @@ function App() {
           <button
             className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
               activeTab === 'aging'
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
             onClick={() => setActiveTab('aging')}
           >
@@ -184,11 +193,11 @@ function App() {
       </header>
 
       {loading && !parsedIssues.length ? (
-        <div className="card py-20 text-center text-slate-400">Loading data...</div>
+        <div className="card py-20 text-center text-slate-400 dark:text-slate-500">Loading data...</div>
       ) : error ? (
-        <div className="card py-20 text-center text-red-500">{error}</div>
+        <div className="card py-20 text-center text-red-500 dark:text-red-400">{error}</div>
       ) : !metrics ? (
-        <div className="card border-dashed border-2 py-20 text-center text-slate-400">
+        <div className="card border-dashed border-2 border-slate-300 dark:border-slate-600 py-20 text-center text-slate-400 dark:text-slate-500">
           No issues found in .beads directory.
         </div>
       ) : activeTab === 'table' ? (

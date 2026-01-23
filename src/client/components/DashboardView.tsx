@@ -46,9 +46,9 @@ function CustomTooltip({ active, payload, displayUnit }: CustomTooltipProps) {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white p-2 border border-slate-200 shadow-md rounded text-xs">
+      <div className="bg-white dark:bg-slate-800 p-2 border border-slate-200 dark:border-slate-600 shadow-md rounded text-xs text-slate-700 dark:text-slate-200">
         <p className="font-bold">{data.title}</p>
-        <p>{data.id}</p>
+        <p className="text-slate-500 dark:text-slate-400">{data.id}</p>
         {data.cycleTimeHours !== undefined && (
           <p>Cycle Time: {formatTimeValue(data.cycleTimeHours, displayUnit)}</p>
         )}
@@ -68,7 +68,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
     <div className="space-y-6">
       {/* Granularity Picker */}
       <div className="flex items-center space-x-2 text-sm">
-        <span className="text-slate-500 font-medium">Time Scale:</span>
+        <span className="text-slate-500 dark:text-slate-400 font-medium">Time Scale:</span>
         <div className="inline-flex rounded-md shadow-sm" role="group">
           {GRANULARITY_OPTIONS.map((option) => (
             <button
@@ -77,7 +77,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
               className={`px-3 py-1.5 text-xs font-medium border first:rounded-l-md last:rounded-r-md ${
                 granularity === option.value
                   ? 'bg-blue-600 text-white border-blue-600 z-10'
-                  : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
               {option.label}
@@ -89,35 +89,35 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
       {/* Summary row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card border-l-4 border-l-orange-500">
-          <div className="text-3xl font-black text-slate-800">
+          <div className="text-3xl font-black text-slate-800 dark:text-slate-100">
             {metrics.avgAge}{' '}
-            <span className="text-sm font-normal text-slate-400">{metrics.displayUnit}</span>
+            <span className="text-sm font-normal text-slate-400 dark:text-slate-500">{metrics.displayUnit}</span>
           </div>
-          <div className="text-sm font-bold text-slate-400 uppercase">
+          <div className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase">
             Avg Work Age
           </div>
         </div>
         <div className="card border-l-4 border-l-blue-500">
-          <div className="text-3xl font-black text-slate-800">
+          <div className="text-3xl font-black text-slate-800 dark:text-slate-100">
             {metrics.openCount}
           </div>
-          <div className="text-sm font-bold text-slate-400 uppercase">
+          <div className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase">
             Active WIP
           </div>
         </div>
         <div className="card border-l-4 border-l-red-500">
-          <div className="text-3xl font-black text-slate-800">
+          <div className="text-3xl font-black text-slate-800 dark:text-slate-100">
             {metrics.ageChartData[3].count}
           </div>
-          <div className="text-sm font-bold text-slate-400 uppercase">
+          <div className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase">
             Stale ({metrics.ageChartData[3].range})
           </div>
         </div>
         <div className="card border-l-4 border-l-emerald-500">
-          <div className="text-3xl font-black text-slate-800">
+          <div className="text-3xl font-black text-slate-800 dark:text-slate-100">
             {metrics.flowChartData.length}
           </div>
-          <div className="text-sm font-bold text-slate-400 uppercase">
+          <div className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase">
             {metrics.displayUnit === 'hours' ? 'Periods' : 'Days'} Tracked
           </div>
         </div>
@@ -125,7 +125,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
 
       {/* Lead Time Scatterplot */}
       <div className="card h-[400px]">
-        <h3 className="text-sm font-bold mb-6 text-slate-700">
+        <h3 className="text-sm font-bold mb-6 text-slate-700 dark:text-slate-200">
           Lead Time Scatterplot (Cycle Time)
         </h3>
         <ResponsiveContainer width="100%" height="90%">
@@ -183,7 +183,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
 
       {/* Aging WIP */}
       <div className="card h-[400px]">
-        <h3 className="text-sm font-bold mb-6 text-slate-700">
+        <h3 className="text-sm font-bold mb-6 text-slate-700 dark:text-slate-200">
           Aging Work in Progress
         </h3>
         <ResponsiveContainer width="100%" height="90%">
@@ -214,7 +214,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
 
       {/* CFD */}
       <div className="card h-[400px]">
-        <h3 className="text-sm font-bold mb-6 text-slate-700">
+        <h3 className="text-sm font-bold mb-6 text-slate-700 dark:text-slate-200">
           Cumulative Flow Diagram
         </h3>
         <ResponsiveContainer width="100%" height="90%">
@@ -260,7 +260,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
       {/* Age & Throughput Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card h-80">
-          <h3 className="text-sm font-bold mb-4">Work Age Distribution</h3>
+          <h3 className="text-sm font-bold mb-4 text-slate-700 dark:text-slate-200">Work Age Distribution</h3>
           <ResponsiveContainer width="100%" height="90%">
             <BarChart data={metrics.ageChartData}>
               <XAxis dataKey="range" fontSize={12} />
@@ -278,7 +278,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
           </ResponsiveContainer>
         </div>
         <div className="card h-80">
-          <h3 className="text-sm font-bold mb-4">
+          <h3 className="text-sm font-bold mb-4 text-slate-700 dark:text-slate-200">
             {metrics.granularity === 'daily' ? 'Daily' : 'Period'} Throughput
           </h3>
           <ResponsiveContainer width="100%" height="90%">

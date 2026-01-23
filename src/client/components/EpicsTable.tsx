@@ -245,12 +245,12 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
 
   const renderSortIndicator = (column: EpicSortColumn) => {
     if (sortConfig.column !== column) {
-      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-300" />;
+      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-300 dark:text-slate-500" />;
     }
     return sortConfig.direction === 'asc' ? (
-      <ArrowUp className="w-3.5 h-3.5 text-slate-500" />
+      <ArrowUp className="w-3.5 h-3.5 text-slate-500 dark:text-slate-300" />
     ) : (
-      <ArrowDown className="w-3.5 h-3.5 text-slate-500" />
+      <ArrowDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-300" />
     );
   };
 
@@ -344,7 +344,7 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
         </div>
         {col.resizable && (
           <div
-            className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-indigo-200/50 active:bg-indigo-300"
+            className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-indigo-200/50 dark:hover:bg-indigo-700/50 active:bg-indigo-300 dark:active:bg-indigo-600"
             onMouseDown={(e) => handleResizeStart(col.key, e)}
             onClick={(e) => e.stopPropagation()}
           />
@@ -356,17 +356,17 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
   return (
     <>
       <div className="card overflow-hidden">
-        <div className="p-4 border-b border-slate-200 bg-slate-50/50">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-700/50">
           <div className="flex gap-3">
             <div className="relative flex-1">
               <input
                 type="text"
                 placeholder="Search epics by ID, title, or owner..."
-                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
               />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
             </div>
             <div className="relative">
               <button
@@ -374,24 +374,24 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                   e.stopPropagation();
                   setColumnMenuOpen(!columnMenuOpen);
                 }}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white hover:bg-slate-50 flex items-center gap-2"
+                className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
                 title="Show/hide columns"
               >
                 <Settings className="w-4 h-4" />
                 Columns
               </button>
               {columnMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10 py-1">
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg z-10 py-1">
                   {columnConfigs.map((col) => (
                     <label
                       key={col.key}
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer"
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-slate-700 dark:text-slate-200"
                     >
                       <input
                         type="checkbox"
                         checked={col.visible}
                         onChange={() => toggleColumnVisibility(col.key)}
-                        className="rounded border-slate-300"
+                        className="rounded border-slate-300 dark:border-slate-600"
                       />
                       <span className="text-sm">{col.label}</span>
                     </label>
@@ -403,8 +403,8 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
         </div>
 
         {hasActiveFilters && (
-          <div className="px-4 py-2 border-b border-slate-200 bg-indigo-50/50 flex items-center justify-between">
-            <span className="text-xs text-slate-600">
+          <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-600 bg-indigo-50/50 dark:bg-indigo-900/20 flex items-center justify-between">
+            <span className="text-xs text-slate-600 dark:text-slate-400">
               {statusFilter.length + priorityFilter.length} filter(s) active
             </span>
             <button
@@ -412,7 +412,7 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                 setStatusFilter([]);
                 setPriorityFilter([]);
               }}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
             >
               <FilterX className="w-3.5 h-3.5" />
               Clear All Filters
@@ -422,12 +422,12 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
 
         <div className="overflow-x-auto">
           <table className="text-sm text-left" style={{ tableLayout: 'fixed', width: `${totalTableWidth}px` }}>
-            <thead className="bg-slate-50 text-slate-600 font-medium border-b">
+            <thead className="bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium border-b dark:border-slate-600">
               <tr>
                 {visibleColumns.map(renderColumnHeader)}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {sortedEpics.map((epic) => {
                 const childCounts = getChildCounts(epic.id);
                 const created = new Date(epic.created_at);
@@ -436,12 +436,12 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                 const isComplete = childCounts.total > 0 && childCounts.open === 0;
                 const isAllOpen = childCounts.total > 0 && childCounts.open === childCounts.total;
                 const childClass = childCounts.total === 0
-                  ? 'text-slate-400'
+                  ? 'text-slate-400 dark:text-slate-500'
                   : isComplete
-                  ? 'text-emerald-600'
+                  ? 'text-emerald-600 dark:text-emerald-400'
                   : isAllOpen
-                  ? 'text-amber-600'
-                  : 'text-indigo-700';
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-indigo-700 dark:text-indigo-300';
                 const completion = childCounts.total === 0
                   ? 0
                   : ((childCounts.total - childCounts.open) / childCounts.total) * 100;
@@ -449,25 +449,25 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                 return (
                   <tr
                     key={epic.id}
-                    className="group hover:bg-slate-50 cursor-pointer border-l-4 border-indigo-100/70"
+                    className="group hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-l-4 border-indigo-100/70 dark:border-indigo-800/70"
                     onClick={() => openDescription(epic)}
                   >
-                    <td style={getColumnStyle('id')} className="px-6 py-3 font-mono text-slate-500 whitespace-nowrap">
+                    <td style={getColumnStyle('id')} className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Boxes className="w-4 h-4 text-indigo-500" />
+                        <Boxes className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
                         <span>{epic.id.includes('-') ? epic.id.split('-').pop() : epic.id}</span>
                       </div>
                     </td>
-                    <td style={getColumnStyle('title')} className="px-6 py-3 font-medium text-slate-900">
+                    <td style={getColumnStyle('title')} className="px-6 py-3 font-medium text-slate-900 dark:text-slate-100">
                       <div className="flex items-center gap-2">
                         <span>{epic.title || 'Untitled epic'}</span>
-                        <span className="text-xs text-slate-400">{ageInDays}d old</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500">{ageInDays}d old</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             openDescription(epic);
                           }}
-                          className="ml-auto text-slate-300 hover:text-indigo-600 transition-colors"
+                          className="ml-auto text-slate-300 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                           title="View Description"
                         >
                           <PanelTopOpen className="w-3.5 h-3.5" />
@@ -486,13 +486,13 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                       >
                         <div className={`flex items-baseline gap-1 font-semibold ${childClass}`}>
                           <span>{childCounts.open}</span>
-                          <span className="text-slate-500 font-normal">/ {childCounts.total}</span>
+                          <span className="text-slate-500 dark:text-slate-400 font-normal">/ {childCounts.total}</span>
                         </div>
-                        <div className="w-full bg-slate-100 rounded-full h-1 mt-1 overflow-hidden">
+                        <div className="w-full bg-slate-100 dark:bg-slate-600 rounded-full h-1 mt-1 overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
                               childCounts.total === 0
-                                ? 'bg-slate-200'
+                                ? 'bg-slate-200 dark:bg-slate-500'
                                 : isComplete
                                 ? 'bg-emerald-500'
                                 : isAllOpen
@@ -508,27 +508,27 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
                           epic.status === 'blocked'
-                            ? 'bg-amber-50 text-amber-800'
+                            ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'
                             : epic.status === 'closed'
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-indigo-50 text-indigo-700'
+                            ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
                         }`}
                       >
                         {epic.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td style={getColumnStyle('priority')} className="px-6 py-3">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded border border-indigo-100 text-indigo-700">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300">
                         {PRIORITY_LABELS[epic.priority]}
                       </span>
                     </td>
-                    <td style={getColumnStyle('assignee')} className="px-6 py-3 text-slate-600">
+                    <td style={getColumnStyle('assignee')} className="px-6 py-3 text-slate-600 dark:text-slate-400">
                       {epic.assignee || '—'}
                     </td>
-                    <td style={getColumnStyle('created')} className="px-6 py-3 text-slate-500 whitespace-nowrap">
+                    <td style={getColumnStyle('created')} className="px-6 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       {created.toLocaleDateString()}
                     </td>
-                    <td style={getColumnStyle('updated')} className="px-6 py-3 text-slate-500 whitespace-nowrap">
+                    <td style={getColumnStyle('updated')} className="px-6 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       {updated ? updated.toLocaleDateString() : '—'}
                     </td>
                   </tr>
@@ -536,7 +536,7 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
               })}
               {sortedEpics.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
                     No epics found. Epics are larger initiatives containing multiple issues.
                   </td>
                 </tr>

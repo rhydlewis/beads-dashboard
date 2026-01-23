@@ -84,6 +84,14 @@ vi.mock('@/hooks/useMetrics', () => ({
   })),
 }));
 
+// Mock useTheme hook for dark mode
+vi.mock('@/hooks/useTheme', () => ({
+  useTheme: vi.fn(() => ({
+    isDark: false,
+    toggle: vi.fn(),
+  })),
+}));
+
 // Mock localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -104,6 +112,21 @@ const localStorageMock = (() => {
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
   writable: true,
+});
+
+// Mock matchMedia for dark mode support
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
 });
 
 // Sample test data

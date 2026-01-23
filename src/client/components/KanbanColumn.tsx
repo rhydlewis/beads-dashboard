@@ -69,14 +69,14 @@ function KanbanColumn({
 
   const getStatusColor = (status: IssueStatus) => {
     switch (status) {
-      case 'open': return 'bg-slate-100 text-slate-700';
-      case 'in_progress': return 'bg-blue-100 text-blue-700';
-      case 'blocked': return 'bg-red-100 text-red-700';
-      case 'closed': return 'bg-green-100 text-green-700';
-      case 'deferred': return 'bg-amber-100 text-amber-700';
-      case 'pinned': return 'bg-purple-100 text-purple-700';
-      case 'hooked': return 'bg-indigo-100 text-indigo-700';
-      default: return 'bg-slate-100 text-slate-700';
+      case 'open': return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200';
+      case 'in_progress': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300';
+      case 'blocked': return 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300';
+      case 'closed': return 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300';
+      case 'deferred': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300';
+      case 'pinned': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300';
+      case 'hooked': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200';
     }
   };
 
@@ -155,14 +155,14 @@ function KanbanColumn({
                 </button>
                 {showSettings && (
                   <div
-                    className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50"
+                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg z-50"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="p-2">
-                      <div className="text-xs font-semibold text-slate-700 mb-2">Auto-hide cards older than:</div>
+                      <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Auto-hide cards older than:</div>
                       <button
                         onClick={() => { onAutoHideHoursChange(null); setShowSettings(false); }}
-                        className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-slate-100 ${autoHideHours === null ? 'bg-blue-50 text-blue-700' : 'text-slate-700'}`}
+                        className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700 ${autoHideHours === null ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}
                       >
                         Disabled (show all)
                       </button>
@@ -170,7 +170,7 @@ function KanbanColumn({
                         <button
                           key={hours}
                           onClick={() => { onAutoHideHoursChange(hours); setShowSettings(false); }}
-                          className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-slate-100 ${autoHideHours === hours ? 'bg-blue-50 text-blue-700' : 'text-slate-700'}`}
+                          className={`w-full text-left px-2 py-1 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700 ${autoHideHours === hours ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}
                         >
                           {formatAutoHideLabel(hours)}
                         </button>
@@ -187,13 +187,13 @@ function KanbanColumn({
       {/* Column Body */}
       <div
         ref={setNodeRef}
-        className={`flex-1 min-h-[200px] p-3 bg-slate-50 transition-colors ${
-          isOver ? 'bg-blue-50 ring-2 ring-blue-300' : ''
+        className={`flex-1 min-h-[200px] p-3 bg-slate-50 dark:bg-slate-900/50 transition-colors ${
+          isOver ? 'bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-300 dark:ring-blue-500' : ''
         } ${hiddenCount !== undefined && hiddenCount > 0 && !showAllHidden ? '' : 'rounded-b-lg'}`}
       >
         <SortableContext items={issues.map(i => i.id)} strategy={verticalListSortingStrategy}>
           {issues.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-slate-400 text-sm">
+            <div className="flex items-center justify-center h-32 text-slate-400 dark:text-slate-500 text-sm">
               No items
             </div>
           ) : (
@@ -210,16 +210,16 @@ function KanbanColumn({
 
       {/* Footer - Show hidden count and toggle */}
       {hiddenCount !== undefined && hiddenCount > 0 && onShowAllHiddenToggle && (
-        <div className="px-4 py-2 bg-slate-100 border-t border-slate-200 rounded-b-lg">
+        <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 rounded-b-lg">
           <button
             onClick={() => onShowAllHiddenToggle(!showAllHidden)}
-            className="w-full flex items-center justify-between text-xs text-slate-600 hover:text-slate-900 transition-colors"
+            className="w-full flex items-center justify-between text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
           >
             <span className="flex items-center gap-1">
               {showAllHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
               {hiddenCount} card{hiddenCount !== 1 ? 's' : ''} hidden
             </span>
-            <span className="text-blue-600 font-medium">
+            <span className="text-blue-600 dark:text-blue-400 font-medium">
               {showAllHidden ? 'Hide old cards' : 'Show all'}
             </span>
           </button>

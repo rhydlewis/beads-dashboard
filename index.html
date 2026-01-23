@@ -5,10 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Beads Performance Dashboard</title>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
     <style>
       body {
         background-color: #f8fafc;
         font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      .dark body {
+        background-color: #0f172a;
       }
       .card {
         background: white;
@@ -16,6 +24,11 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         padding: 1.25rem;
         border: 1px solid #e2e8f0;
+      }
+      .dark .card {
+        background: #1e293b;
+        border-color: #334155;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
       }
     </style>
   </head>

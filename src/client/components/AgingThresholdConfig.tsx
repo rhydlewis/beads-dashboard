@@ -169,17 +169,17 @@ export function AgingThresholdConfig({ issues, onClose, onSave }: AgingThreshold
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-start p-6 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-start p-6 border-b border-slate-100 dark:border-slate-700">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">Aging Threshold Configuration</h3>
-            <p className="text-sm text-slate-500 mt-1">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Aging Threshold Configuration</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Set when work items should be flagged as aging
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
             title="Close"
           >
             <X className="w-6 h-6" />
@@ -195,13 +195,13 @@ export function AgingThresholdConfig({ issues, onClose, onSave }: AgingThreshold
                 id="autoCalculate"
                 checked={config.useAutoCalculation}
                 onChange={(e) => handleInputChange('useAutoCalculation', e.target.checked)}
-                className="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                className="mt-1 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
               />
               <div>
-                <label htmlFor="autoCalculate" className="text-sm font-medium text-slate-700">
+                <label htmlFor="autoCalculate" className="text-sm font-medium text-slate-700 dark:text-slate-200">
                   Auto-calculate from historical data
                 </label>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Automatically determine thresholds based on percentiles of historical cycle times
                 </p>
               </div>
@@ -277,17 +277,17 @@ export function AgingThresholdConfig({ issues, onClose, onSave }: AgingThreshold
           </div>
         </div>
 
-        <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-lg flex justify-end gap-3">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-700 rounded-b-lg flex justify-end gap-3">
           <button
             onClick={handleReset}
-            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors"
+            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             disabled={isCalculating}
           >
             Reset to Defaults
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors"
+            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             disabled={isCalculating}
           >
             Cancel
@@ -297,7 +297,7 @@ export function AgingThresholdConfig({ issues, onClose, onSave }: AgingThreshold
             className={`px-4 py-2 text-white rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
               isChanged
                 ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-slate-400 cursor-not-allowed'
+                : 'bg-slate-400 dark:bg-slate-600 cursor-not-allowed'
             }`}
             disabled={!isChanged || isCalculating}
           >
