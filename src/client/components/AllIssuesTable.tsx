@@ -331,16 +331,16 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
     const t = (type || '').toLowerCase();
     if (t === 'bug')
       return {
-        class: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20',
+        class: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20 dark:bg-rose-900/30 dark:text-rose-300 dark:ring-rose-500/30',
         icon: <Bug className="w-3 h-3" />,
       };
     if (t === 'feature')
       return {
-        class: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10',
+        class: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10 dark:bg-purple-900/30 dark:text-purple-300 dark:ring-purple-500/30',
         icon: <Box className="w-3 h-3" />,
       };
     return {
-      class: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10',
+      class: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30',
       icon: <ListCheck className="w-3 h-3" />,
     };
   };
@@ -397,12 +397,12 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
 
   const renderSortIndicator = (column: SortColumn) => {
     if (sortConfig.column !== column) {
-      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-300" />;
+      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />;
     }
     return sortConfig.direction === 'asc' ? (
-      <ArrowUp className="w-3.5 h-3.5 text-slate-500" />
+      <ArrowUp className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
     ) : (
-      <ArrowDown className="w-3.5 h-3.5 text-slate-500" />
+      <ArrowDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
     );
   };
 
@@ -567,7 +567,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
         {content}
         {col.resizable && (
           <div
-            className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 group-hover:bg-blue-200 transition-colors"
+            className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 group-hover:bg-blue-200 dark:hover:bg-blue-500 dark:group-hover:bg-blue-700 transition-colors"
             onMouseDown={(e) => handleResizeStart(col.key, e)}
             title="Drag to resize column"
             style={{ marginRight: '-4px' }}
@@ -580,17 +580,17 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
   return (
     <>
       <div className="card overflow-hidden">
-        <div className="p-4 border-b border-slate-200 bg-slate-50/50">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <input
                 type="text"
                 placeholder="Filter by ID, Title, Status, Type, or Priority..."
-                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
               />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
             </div>
             <button
               onClick={() => setShowCreationModal(true)}
@@ -603,8 +603,8 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
         </div>
 
         {childFilter && (
-          <div className="px-4 py-2 border-b border-slate-200 bg-indigo-50 flex items-center justify-between">
-            <div className="text-xs text-indigo-800">
+          <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-between">
+            <div className="text-xs text-indigo-800 dark:text-indigo-300">
               Showing issues linked to <span className="font-semibold">{focusedEpic?.title || childFilter}</span>
             </div>
             <button
@@ -612,7 +612,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                 setChildFilter(null);
                 onClearFocusedEpic();
               }}
-              className="text-xs text-indigo-700 hover:text-indigo-900 font-medium"
+              className="text-xs text-indigo-700 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200 font-medium"
             >
               Clear child filter
             </button>
@@ -620,13 +620,13 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
         )}
 
         {hasActiveFilters && (
-          <div className="px-4 py-2 border-b border-slate-200 bg-blue-50/50 flex items-center justify-between">
-            <span className="text-xs text-slate-600">
+          <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-blue-50/50 dark:bg-blue-900/20 flex items-center justify-between">
+            <span className="text-xs text-slate-600 dark:text-slate-400">
               {statusFilter.length + typeFilter.length + priorityFilter.length} filter(s) active
             </span>
             <button
               onClick={clearAllFilters}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+              className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-1"
             >
               <FilterX className="w-3.5 h-3.5" />
               Clear All Filters
@@ -634,19 +634,19 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
           </div>
         )}
 
-        <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-end relative">
+        <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-end relative">
           <button
             onClick={(e) => {
               e.stopPropagation();
               setShowColumnMenu(!showColumnMenu);
             }}
-            className="text-xs text-slate-600 hover:text-slate-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 transition-colors"
+            className="text-xs text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
             <Settings className="w-3.5 h-3.5" />
             Columns
           </button>
           {showColumnMenu && (
-            <div className="absolute right-4 top-10 z-50 bg-white border border-slate-200 rounded-lg shadow-lg min-w-48 py-1">
+            <div className="absolute right-4 top-10 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg min-w-48 py-1">
               {columnConfigs.map((col) => (
                 <button
                   key={col.key}
@@ -654,14 +654,14 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                     e.stopPropagation();
                     toggleColumnVisibility(col.key);
                   }}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
                 >
                   {col.visible ? (
                     <Eye className="w-4 h-4 text-blue-500" />
                   ) : (
-                    <EyeOff className="w-4 h-4 text-slate-300" />
+                    <EyeOff className="w-4 h-4 text-slate-300 dark:text-slate-600" />
                   )}
-                  <span className={col.visible ? 'text-slate-700' : 'text-slate-400'}>
+                  <span className={col.visible ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}>
                     {col.label}
                   </span>
                 </button>
@@ -672,12 +672,12 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
 
         <div className="overflow-x-auto">
           <table className="text-sm text-left" style={{ tableLayout: 'fixed', width: `${totalTableWidth}px` }}>
-            <thead className="bg-slate-50 text-slate-600 font-medium border-b">
+            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium border-b dark:border-slate-700">
               <tr>
                 {visibleColumns.map(renderColumnHeader)}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {sortedIssues.map((issue) => {
                 const created = new Date(issue.created_at);
                 const updated = issue.updated_at ? new Date(issue.updated_at) : null;
@@ -696,25 +696,25 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                 const typeInfo = getTypeInfo(issue.issue_type);
 
                 return (
-                  <tr key={issue.id} className="hover:bg-slate-50 group">
-                    <td className="px-6 py-3 font-mono text-slate-500 whitespace-nowrap" style={getColumnStyle('id')}>
+                  <tr key={issue.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group">
+                    <td className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" style={getColumnStyle('id')}>
                       <div className="flex items-center gap-2">
                         <span>{shortId}</span>
                         <button
                           onClick={() => handleCopy(issue.id)}
-                          className="text-slate-300 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100"
+                          className="text-slate-300 hover:text-slate-600 dark:text-slate-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
                           title="Copy full ID"
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-3 font-medium text-slate-900" style={getColumnStyle('title')}>
+                    <td className="px-6 py-3 font-medium text-slate-900 dark:text-slate-100" style={getColumnStyle('title')}>
                       <div className="flex items-center gap-2">
                         <span>{issue.title || 'Untitled'}</span>
                         <button
                           onClick={() => openDescription(issue)}
-                          className="ml-auto text-slate-300 hover:text-blue-600 transition-colors"
+                          className="ml-auto text-slate-300 hover:text-blue-600 dark:text-slate-600 dark:hover:text-blue-400 transition-colors"
                           title="View Description"
                         >
                           <PanelTopOpen className="w-3.5 h-3.5" />
@@ -748,20 +748,20 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                         <button
                           onClick={() => handlePriorityUpdate(issue.id, (issue.priority - 1) as Priority)}
                           disabled={issue.priority === 0 || updatingPriority === issue.id}
-                          className="text-slate-300 hover:text-blue-600 disabled:text-slate-200 disabled:cursor-not-allowed opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5"
+                          className="text-slate-300 hover:text-blue-600 disabled:text-slate-200 disabled:cursor-not-allowed dark:text-slate-600 dark:hover:text-blue-400 dark:disabled:text-slate-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5"
                           title="Increase Priority (Up Arrow)"
                           tabIndex={-1}
                         >
                           <ChevronUp className="w-3.5 h-3.5" />
                         </button>
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-white border ${issue.priority <= 1 ? 'border-red-200' : 'border-slate-200'}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-white dark:bg-slate-800 border ${issue.priority <= 1 ? 'border-red-200 dark:border-red-800' : 'border-slate-200 dark:border-slate-600'} dark:text-slate-200`}>
                           {PriorityIcon}
                           {priorityLabel}
                         </span>
                         <button
                           onClick={() => handlePriorityUpdate(issue.id, (issue.priority + 1) as Priority)}
                           disabled={issue.priority === 4 || updatingPriority === issue.id}
-                          className="text-slate-300 hover:text-blue-600 disabled:text-slate-200 disabled:cursor-not-allowed opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5"
+                          className="text-slate-300 hover:text-blue-600 disabled:text-slate-200 disabled:cursor-not-allowed dark:text-slate-600 dark:hover:text-blue-400 dark:disabled:text-slate-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5"
                           title="Decrease Priority (Down Arrow)"
                           tabIndex={-1}
                         >
@@ -773,25 +773,25 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
                           issue.status === 'blocked'
-                            ? 'bg-amber-50 text-amber-800'
+                            ? 'bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
                             : issue.status === 'closed'
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-slate-100 text-slate-700'
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                            : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
                         }`}
                       >
                         {issue.status.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-3 whitespace-nowrap text-slate-500" style={getColumnStyle('created')}>
+                    <td className="px-6 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400" style={getColumnStyle('created')}>
                       {created.toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-3 whitespace-nowrap text-slate-500" style={getColumnStyle('updated')}>
+                    <td className="px-6 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400" style={getColumnStyle('updated')}>
                       {updated ? updated.toLocaleDateString() : '—'}
                     </td>
-                    <td className={`px-6 py-3 ${cycleTime === '-' ? 'text-slate-400' : 'text-slate-900'}`} style={getColumnStyle('cycleTime')}>
+                    <td className={`px-6 py-3 ${cycleTime === '-' ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100'}`} style={getColumnStyle('cycleTime')}>
                       {cycleTime}
                     </td>
-                    <td className={`px-6 py-3 ${isStale ? 'text-amber-600 font-medium' : 'text-slate-900'}`} style={getColumnStyle('age')}>
+                    <td className={`px-6 py-3 ${isStale ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-slate-900 dark:text-slate-100'}`} style={getColumnStyle('age')}>
                       {age}
                     </td>
                     <td className="px-6 py-3" style={getColumnStyle('actions')}>
@@ -800,7 +800,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                           <button
                             onClick={() => handleStatusUpdate(issue.id, 'in_progress')}
                             disabled={updatingStatus === issue.id}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors disabled:opacity-50"
                             title="Resume Progress"
                           >
                             <Play className="w-4 h-4" />
@@ -810,7 +810,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                           <button
                             onClick={() => handleStatusUpdate(issue.id, 'in_progress')}
                             disabled={updatingStatus === issue.id}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors disabled:opacity-50"
                             title="Start Progress"
                           >
                             <Play className="w-4 h-4" />
@@ -820,7 +820,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                           <button
                             onClick={() => handleStatusUpdate(issue.id, 'closed')}
                             disabled={updatingStatus === issue.id}
-                            className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+                            className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors disabled:opacity-50"
                             title="Close Issue"
                           >
                             <Check className="w-4 h-4" />
@@ -833,7 +833,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
               })}
               {sortedIssues.length === 0 && (
                 <tr>
-                  <td colSpan={visibleColumns.length} className="px-6 py-8 text-center text-slate-400">
+                  <td colSpan={visibleColumns.length} className="px-6 py-8 text-center text-slate-400 dark:text-slate-500">
                     No issues found{filterText ? ` matching "${filterText}"` : ''}
                   </td>
                 </tr>

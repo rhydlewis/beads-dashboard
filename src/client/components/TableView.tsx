@@ -18,12 +18,12 @@ function TableView({ issues }: TableViewProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex space-x-4 border-b border-slate-200">
+      <div className="flex space-x-4 border-b border-slate-200 dark:border-slate-700">
         <button
           className={`pb-2 px-1 text-sm font-medium transition-colors ${
             activeView === 'issues'
-              ? 'border-b-2 border-blue-500 text-blue-600'
-              : 'text-slate-500 hover:text-slate-700'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
           onClick={() => setActiveView('issues')}
         >
@@ -32,8 +32,8 @@ function TableView({ issues }: TableViewProps) {
         <button
           className={`pb-2 px-1 text-sm font-medium transition-colors ${
             activeView === 'epics'
-              ? 'border-b-2 border-blue-500 text-blue-600'
-              : 'text-slate-500 hover:text-slate-700'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
           onClick={() => setActiveView('epics')}
         >

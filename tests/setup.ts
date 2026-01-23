@@ -2,6 +2,21 @@ import '@testing-library/jest-dom';
 import { expect, afterEach, beforeEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
+// Mock matchMedia for dark mode support
+const mockMatchMedia = vi.fn().mockImplementation((query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(), // deprecated
+  removeListener: vi.fn(), // deprecated
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}));
+
+// Use vi.stubGlobal for proper jsdom compatibility
+vi.stubGlobal('matchMedia', mockMatchMedia);
+
 // Mock localStorage
 const localStorageMock = {
   store: {} as Record<string, string>,

@@ -83,9 +83,9 @@ export function AgingAlertBadge({ issues, onConfigureClick, thresholdConfig }: A
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-xl z-50">
-          <div className="p-3 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="text-sm font-bold text-slate-800">Aging Work Items</h3>
+        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl z-50">
+          <div className="p-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Aging Work Items</h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={(e) => {
@@ -93,7 +93,7 @@ export function AgingAlertBadge({ issues, onConfigureClick, thresholdConfig }: A
                   onConfigureClick();
                   setShowDropdown(false);
                 }}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 p-1"
                 title="Configure thresholds"
               >
                 <Settings className="w-4 h-4" />
@@ -103,7 +103,7 @@ export function AgingAlertBadge({ issues, onConfigureClick, thresholdConfig }: A
                   e.stopPropagation();
                   setShowDropdown(false);
                 }}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 p-1"
                 title="Close"
               >
                 <X className="w-4 h-4" />
@@ -112,41 +112,41 @@ export function AgingAlertBadge({ issues, onConfigureClick, thresholdConfig }: A
           </div>
 
           {agingIssues.length === 0 ? (
-            <div className="p-4 text-center text-slate-400 text-sm">
+            <div className="p-4 text-center text-slate-400 dark:text-slate-500 text-sm">
               No aging items found
             </div>
           ) : (
             <div className="max-h-96 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-slate-600 font-medium sticky top-0">
+                <thead className="bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium sticky top-0">
                   <tr>
                     <th className="px-3 py-2 text-left">Issue</th>
                     <th className="px-3 py-2 text-left">Age</th>
                     <th className="px-3 py-2 text-left">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {agingIssues.slice(0, AGING_ALERT_PREVIEW_LIMIT).map(({ issue, ageDisplay, status }) => {
                     const shortId = extractShortId(issue.id);
 
                     return (
-                      <tr key={issue.id} className="hover:bg-slate-50">
+                      <tr key={issue.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-slate-500 text-xs">{shortId}</span>
-                            <span className="font-medium text-slate-900 truncate max-w-[120px]">
+                            <span className="font-mono text-slate-500 dark:text-slate-400 text-xs">{shortId}</span>
+                            <span className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[120px]">
                               {issue.title || 'Untitled'}
                             </span>
                           </div>
                         </td>
-                        <td className={`px-3 py-2 font-medium ${status === 'critical' ? 'text-red-600' : 'text-yellow-600'}`}>
+                        <td className={`px-3 py-2 font-medium ${status === 'critical' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'}`}>
                           {ageDisplay}
                         </td>
                         <td className="px-3 py-2">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                             status === 'critical'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-yellow-100 text-yellow-800'
+                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
                           }`}>
                             {status === 'critical' ? 'Critical' : 'Warning'}
                           </span>
@@ -158,7 +158,7 @@ export function AgingAlertBadge({ issues, onConfigureClick, thresholdConfig }: A
               </table>
 
               {agingIssues.length > 10 && (
-                <div className="p-2 text-center text-xs text-slate-500">
+                <div className="p-2 text-center text-xs text-slate-500 dark:text-slate-400">
                   Showing 10 of {agingIssues.length} aging items
                 </div>
               )}

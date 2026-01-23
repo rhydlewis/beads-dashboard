@@ -292,20 +292,20 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
   return (
     <>
       {/* Search Filter */}
-      <div className="mb-4 p-4 bg-white rounded-lg border border-slate-200">
+      <div className="mb-4 p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
         <div className="relative">
           <input
             type="text"
             placeholder="Filter cards by title, ID, status, type, or priority..."
-            className="w-full pl-10 pr-10 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+            className="w-full pl-10 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
           />
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-slate-500" />
           {filterText && (
             <button
               onClick={() => setFilterText('')}
-              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
               aria-label="Clear filter"
             >
               <X className="h-4 w-4" />
@@ -313,7 +313,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
           )}
         </div>
         {filterText && (
-          <div className="mt-2 text-xs text-slate-600">
+          <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">
             Showing {filteredCount} of {totalIssues} cards
           </div>
         )}
