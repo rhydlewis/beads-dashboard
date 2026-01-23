@@ -14,7 +14,8 @@
     "beads-dashboard": "bin/beads-dashboard.js"
   },
   "scripts": {
-    "dev": "concurrently \"vite\" \"tsx src/server/index.ts\"",
+    "dev": "concurrently \"vite\" \"npm run dev:server\"",
+    "dev:server": "tsx src/server/index.ts",
     "build": "npm run typecheck && npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "tsc -p tsconfig.node.json",

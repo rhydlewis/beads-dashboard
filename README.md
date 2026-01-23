@@ -110,11 +110,17 @@ Opens at: http://localhost:3001
 Point the dashboard to any directory containing a `.beads` folder:
 
 ```bash
-# Development mode
-npm run dev -- /path/to/your/project
-
-# Production mode
+# Production mode (recommended for viewing other projects)
+npm run build
 npm start -- /path/to/your/project
+
+# Development mode (requires two terminals for HMR)
+# Terminal 1: Frontend
+npm run vite
+
+# Terminal 2: Backend
+npm run dev:server -- /path/to/your/project
+# Then visit http://localhost:3000
 ```
 
 ## Development

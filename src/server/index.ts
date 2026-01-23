@@ -77,7 +77,7 @@ if (beadsDirectoryExists(projectRoot)) {
     console.log('File watcher ready');
   });
 
-  watcher.on('all', (event, filePath) => {
+  watcher.on('all', () => {
     // Database changed - this catches manual bd CLI updates outside the dashboard
     io.emit('refresh');
   });
