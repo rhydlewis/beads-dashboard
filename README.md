@@ -4,7 +4,7 @@
 
 A local, real-time lean metrics dashboard for [Beads](https://github.com/steveyegge/beads). This tool visualizes your Beads issue database to help you understand your flow, identify bottlenecks, and track continuous improvement metrics.
 
-![](./images/bd-metrics.png)
+![](https://raw.githubusercontent.com/rhydlewis/beads-dashboard/main/images/bd-metrics.png)
 
 Built with **TypeScript, Vite, React 18, and Vitest** for type-safe code, fast development, and comprehensive testing.
 
@@ -39,7 +39,7 @@ Built with **TypeScript, Vite, React 18, and Vitest** for type-safe code, fast d
 *   **Security**: XSS prevention, input sanitization, and CORS restrictions
 *   **Community Ready**: Works with any Beads repository
 
-![](./images/bd-aging.png)
+![](https://raw.githubusercontent.com/rhydlewis/beads-dashboard/main/images/bd-aging.png)
 
 ## Quick Start (Global Install)
 
