@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import type { Issue } from '@shared/types';
+import type { TimeDisplayMode } from '@/utils/timeFormatting';
 import AllIssuesTable from './AllIssuesTable';
 import EpicsTable from './EpicsTable';
 
 interface TableViewProps {
   issues: Issue[];
+  timeDisplayMode: TimeDisplayMode;
+  onTimeDisplayModeChange: (mode: TimeDisplayMode) => void;
 }
 
-function TableView({ issues }: TableViewProps) {
+function TableView({ issues, timeDisplayMode, onTimeDisplayModeChange }: TableViewProps) {
   const [activeView, setActiveView] = useState<'issues' | 'epics'>('issues');
   const [focusedEpicId, setFocusedEpicId] = useState<string | null>(null);
 
@@ -46,9 +49,14 @@ function TableView({ issues }: TableViewProps) {
           issues={issues}
           focusedEpicId={focusedEpicId}
           onClearFocusedEpic={() => setFocusedEpicId(null)}
+          timeDisplayMode={timeDisplayMode}
+          onTimeDisplayModeChange={onTimeDisplayModeChange}
         />
       ) : (
-        <EpicsTable issues={issues} onSelectChildren={handleSelectChildren} />
+        <EpicsTable
+          issues={issues}
+          onSelectChildren={handleSelectChildren}
+        />
       )}
     </div>
   );

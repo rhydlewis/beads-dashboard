@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import type { Issue, IssueStatus, Priority, CreateIssueRequest } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
+import type { TimeDisplayMode } from '@/utils/timeFormatting';
+import { formatTimestamp, formatAge, formatCycleTime } from '@/utils/timeFormatting';
 import FilterDropdown from './FilterDropdown';
 import EpicFilterDropdown from './EpicFilterDropdown';
 import IssueViewModal from './IssueViewModal';
@@ -33,6 +35,8 @@ interface AllIssuesTableProps {
   issues: Issue[];
   focusedEpicId: string | null;
   onClearFocusedEpic: () => void;
+  timeDisplayMode: TimeDisplayMode;
+  onTimeDisplayModeChange: (mode: TimeDisplayMode) => void;
 }
 
 type SortColumn =
@@ -89,7 +93,7 @@ const doesIssueBelongToEpic = (issue: Issue, epicId: string) => {
   return issue.dependencies?.some((dep) => dep === epicId) ?? false;
 };
 
-function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssuesTableProps) {
+function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplayMode, onTimeDisplayModeChange }: AllIssuesTableProps) {
   const [filterText, setFilterText] = useState('');
   const [activeDescription, setActiveDescription] = useState<Issue | null>(null);
   const [childFilter, setChildFilter] = useState<string | null>(null);
@@ -697,7 +701,14 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
           </div>
         )}
 
-        <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-end relative">
+        <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-end gap-2 relative">
+          <button
+            onClick={() => onTimeDisplayModeChange(timeDisplayMode === 'day' ? 'hour' : 'day')}
+            className="text-xs text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            title={`Switch to ${timeDisplayMode === 'day' ? 'hour' : 'day'} granularity`}
+          >
+            {timeDisplayMode === 'day' ? 'Show Hours' : 'Show Days'}
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -742,15 +753,15 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {sortedIssues.map((issue) => {
-                const created = new Date(issue.created_at);
-                const updated = issue.updated_at ? new Date(issue.updated_at) : null;
                 const isClosed = issue.status === 'closed';
                 const ageInDays = getAgeInDays(issue);
                 const isStale = !isClosed && ageInDays > 30;
 
-                const cycleTimeDays = getCycleTimeDays(issue);
-                const cycleTime = cycleTimeDays !== null ? `${cycleTimeDays}d` : '-';
-                const age = !isClosed ? `${ageInDays}d` : '-';
+                // Format timestamps using the selected display mode
+                const createdDisplay = formatTimestamp(issue.created_at, timeDisplayMode);
+                const updatedDisplay = formatTimestamp(issue.updated_at, timeDisplayMode);
+                const cycleTime = formatCycleTime(issue.created_at, issue.closed_at, timeDisplayMode);
+                const age = !isClosed ? formatAge(issue.created_at, timeDisplayMode) : '-';
 
                 const priorityLabel = PRIORITY_LABELS[issue.priority] || issue.priority;
                 const PriorityIcon = getPriorityIcon(issue.priority);
@@ -869,10 +880,10 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                       </span>
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400" style={getColumnStyle('created')}>
-                      {created.toLocaleDateString()}
+                      {createdDisplay}
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400" style={getColumnStyle('updated')}>
-                      {updated ? updated.toLocaleDateString() : '—'}
+                      {updatedDisplay}
                     </td>
                     <td className={`px-6 py-3 ${cycleTime === '-' ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100'}`} style={getColumnStyle('cycleTime')}>
                       {cycleTime}

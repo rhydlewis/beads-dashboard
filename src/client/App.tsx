@@ -4,6 +4,7 @@ import { Plus, Sun, Moon } from 'lucide-react';
 import type { Issue, TimeGranularity, CreateIssueRequest } from '@shared/types';
 import { useMetrics } from '@/hooks/useMetrics';
 import { useTheme } from '@/hooks/useTheme';
+import { useTimeDisplayMode } from '@/hooks/useTimeDisplayMode';
 import DashboardView from '@/components/DashboardView';
 import TableView from '@/components/TableView';
 import { AgingAlertBadge } from '@/components/AgingAlertBadge';
@@ -30,6 +31,7 @@ function App() {
   const [showCreationModal, setShowCreationModal] = useState(false);
 
   const { isDark, toggle: toggleTheme } = useTheme();
+  const [timeDisplayMode, setTimeDisplayMode] = useTimeDisplayMode();
   const metrics = useMetrics(parsedIssues, granularity);
 
   const fetchData = async () => {
@@ -203,6 +205,8 @@ function App() {
       ) : activeTab === 'table' ? (
         <TableView
           issues={parsedIssues}
+          timeDisplayMode={timeDisplayMode}
+          onTimeDisplayModeChange={setTimeDisplayMode}
         />
       ) : activeTab === 'board' ? (
         <KanbanBoard issues={parsedIssues} onRefresh={fetchData} />
