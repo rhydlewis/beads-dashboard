@@ -25,6 +25,7 @@ import {
 import type { Issue, IssueStatus, Priority, CreateIssueRequest } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
 import FilterDropdown from './FilterDropdown';
+import EpicFilterDropdown from './EpicFilterDropdown';
 import IssueViewModal from './IssueViewModal';
 import IssueCreationModal from './IssueCreationModal';
 
@@ -37,6 +38,7 @@ interface AllIssuesTableProps {
 type SortColumn =
   | 'id'
   | 'title'
+  | 'epic'
   | 'type'
   | 'priority'
   | 'status'
@@ -57,6 +59,7 @@ interface ColumnConfig {
 const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
   { key: 'id', label: 'ID', visible: true, width: 120, minWidth: 80, resizable: true },
   { key: 'title', label: 'Title', visible: true, width: 300, minWidth: 150, resizable: true },
+  { key: 'epic', label: 'Epic', visible: true, width: 180, minWidth: 120, resizable: true },
   { key: 'type', label: 'Type', visible: true, width: 120, minWidth: 100, resizable: true },
   { key: 'priority', label: 'Priority', visible: true, width: 140, minWidth: 120, resizable: true },
   { key: 'status', label: 'Status', visible: true, width: 120, minWidth: 100, resizable: true },
@@ -104,6 +107,10 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
   const [priorityFilter, setPriorityFilter] = useState<Priority[]>(() => {
     const saved = localStorage.getItem('beads-filter-priority');
     return saved ? JSON.parse(saved) : [];
+  });
+  const [epicFilter, setEpicFilter] = useState<string | null>(() => {
+    const saved = localStorage.getItem('beads-filter-epic');
+    return saved || null;
   });
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -155,6 +162,14 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
   useEffect(() => {
     localStorage.setItem('beads-filter-priority', JSON.stringify(priorityFilter));
   }, [priorityFilter]);
+
+  useEffect(() => {
+    if (epicFilter) {
+      localStorage.setItem('beads-filter-epic', epicFilter);
+    } else {
+      localStorage.removeItem('beads-filter-epic');
+    }
+  }, [epicFilter]);
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -254,12 +269,30 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
     [nonEpicIssues]
   );
 
+  const epics = useMemo(
+    () => issues.filter((issue) => issue.issue_type === 'epic' && issue.status !== 'tombstone'),
+    [issues]
+  );
+
   const filteredIssues = nonEpicIssues.filter((issue) => {
     if (issue.status === 'tombstone') return false;
     if (statusFilter.length > 0 && !statusFilter.includes(issue.status)) return false;
     if (typeFilter.length > 0 && !typeFilter.includes(issue.issue_type)) return false;
     if (priorityFilter.length > 0 && !priorityFilter.includes(issue.priority)) return false;
     if (childFilter && !doesIssueBelongToEpic(issue, childFilter)) return false;
+
+    // Epic filter logic
+    if (epicFilter !== null) {
+      if (epicFilter === '(no-epic)') {
+        // Show only issues without a parent epic
+        if (issue.parent_id || issue.dependencies?.some((dep) => epics.find((e) => e.id === dep))) {
+          return false;
+        }
+      } else {
+        // Show only issues belonging to the selected epic
+        if (!doesIssueBelongToEpic(issue, epicFilter)) return false;
+      }
+    }
 
     if (!filterText) return true;
     const searchLower = filterText.toLowerCase();
@@ -375,16 +408,18 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
     if (filterType === 'status') setStatusFilter([]);
     else if (filterType === 'type') setTypeFilter([]);
     else if (filterType === 'priority') setPriorityFilter([]);
+    else if (filterType === 'epic') setEpicFilter(null);
   };
 
   const clearAllFilters = () => {
     setStatusFilter([]);
     setTypeFilter([]);
     setPriorityFilter([]);
+    setEpicFilter(null);
   };
 
   const hasActiveFilters =
-    statusFilter.length > 0 || typeFilter.length > 0 || priorityFilter.length > 0;
+    statusFilter.length > 0 || typeFilter.length > 0 || priorityFilter.length > 0 || epicFilter !== null;
 
   const handleSort = (column: SortColumn) => {
     setSortConfig((prev) => {
@@ -495,6 +530,20 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
               {col.label}
               {isSortable && renderSortIndicator(col.key as SortColumn)}
             </button>
+          );
+        case 'epic':
+          return (
+            <div className="flex items-center">
+              <span>{col.label}</span>
+              <EpicFilterDropdown
+                epics={epics}
+                selectedEpicId={epicFilter}
+                openDropdown={openDropdown}
+                setOpenDropdown={setOpenDropdown}
+                onSelect={setEpicFilter}
+                onClear={() => clearFilter('epic')}
+              />
+            </div>
           );
         case 'type':
           return (
@@ -621,9 +670,23 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
 
         {hasActiveFilters && (
           <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-blue-50/50 dark:bg-blue-900/20 flex items-center justify-between">
-            <span className="text-xs text-slate-600 dark:text-slate-400">
-              {statusFilter.length + typeFilter.length + priorityFilter.length} filter(s) active
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-slate-600 dark:text-slate-400">
+                {statusFilter.length + typeFilter.length + priorityFilter.length + (epicFilter !== null ? 1 : 0)} filter(s) active
+              </span>
+              {epicFilter && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300">
+                  Epic: {epicFilter === '(no-epic)' ? '(No Epic)' : epics.find((e) => e.id === epicFilter)?.title || epicFilter}
+                  <button
+                    onClick={() => clearFilter('epic')}
+                    className="hover:text-blue-900 dark:hover:text-blue-100"
+                    aria-label="Clear epic filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </div>
             <button
               onClick={clearAllFilters}
               className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-1"
@@ -695,6 +758,13 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                 const shortId = issue.id.includes('-') ? issue.id.split('-').pop() : issue.id;
                 const typeInfo = getTypeInfo(issue.issue_type);
 
+                // Find parent epic for this issue
+                const parentEpic = issue.parent_id
+                  ? epics.find((e) => e.id === issue.parent_id)
+                  : issue.dependencies
+                    ? epics.find((e) => issue.dependencies?.includes(e.id))
+                    : null;
+
                 return (
                   <tr key={issue.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group">
                     <td className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" style={getColumnStyle('id')}>
@@ -720,6 +790,22 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic }: AllIssues
                           <PanelTopOpen className="w-3.5 h-3.5" />
                         </button>
                       </div>
+                    </td>
+                    <td className="px-6 py-3" style={getColumnStyle('epic')}>
+                      {parentEpic ? (
+                        <button
+                          onClick={() => setEpicFilter(parentEpic.id)}
+                          className="text-left text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer transition-colors"
+                          title={`Filter by epic: ${parentEpic.title}`}
+                        >
+                          <div className="truncate max-w-[160px]">{parentEpic.title || 'Untitled'}</div>
+                          <div className="text-xs font-mono text-slate-400 dark:text-slate-500">
+                            {parentEpic.id.includes('-') ? parentEpic.id.split('-').pop() : parentEpic.id}
+                          </div>
+                        </button>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500 text-sm italic">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-3" style={getColumnStyle('type')}>
                       <span className={`capitalize inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium ${typeInfo.class}`}>

@@ -21,23 +21,48 @@ export async function readBeadsData(projectRoot: string): Promise<Issue[]> {
   }
 
   try {
-    // Use bd CLI to read directly from the SQLite database
-    // This ensures we get the latest data, not stale JSONL file
-    const { stdout, stderr } = await execAsync('bd list --json --status=all', {
+    // Use bd export to get complete issue data including dependencies
+    // bd list --json doesn't include dependencies or parent_id fields
+    // bd export returns all issues by default (no status filter needed)
+    const { stdout, stderr } = await execAsync('bd export', {
       cwd: projectRoot,
       maxBuffer: CLI_BUFFER_SIZE
     });
 
     if (stderr) {
-      console.warn('bd list stderr:', stderr);
+      console.warn('bd export stderr:', stderr);
     }
 
     if (!stdout.trim()) {
       return [];
     }
 
-    // Parse the JSON output
-    const issues = JSON.parse(stdout) as Issue[];
+    // Parse JSONL output (one JSON object per line)
+    const lines = stdout.trim().split('\n').filter(line => line.trim());
+    const rawIssues = lines.map(line => JSON.parse(line));
+
+    // Transform dependencies from bd export format to our format
+    const issues: Issue[] = rawIssues.map(issue => {
+      // Transform dependencies array from {issue_id, depends_on_id, type} to just string[]
+      const dependencies = issue.dependencies
+        ? issue.dependencies.map((dep: any) => dep.depends_on_id)
+        : undefined;
+
+      // Extract parent_id from dependencies if there's an epic
+      // An issue's parent epic is a dependency where the depended-on issue is type 'epic'
+      const parentEpicDep = issue.dependencies?.find((dep: any) => {
+        const dependedOnIssue = rawIssues.find((i: any) => i.id === dep.depends_on_id);
+        return dependedOnIssue?.issue_type === 'epic';
+      });
+      const parent_id = parentEpicDep?.depends_on_id;
+
+      return {
+        ...issue,
+        dependencies,
+        parent_id
+      };
+    });
+
     return issues;
   } catch (error) {
     console.error('Error reading beads data from database:', error);
