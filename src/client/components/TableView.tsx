@@ -56,6 +56,7 @@ function TableView({ issues, timeDisplayMode, onTimeDisplayModeChange }: TableVi
         <EpicsTable
           issues={issues}
           onSelectChildren={handleSelectChildren}
+          timeDisplayMode={timeDisplayMode}
         />
       )}
     </div>

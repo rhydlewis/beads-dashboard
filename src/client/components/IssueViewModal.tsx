@@ -3,16 +3,18 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { X, Edit2, FileText, Palette, CheckSquare } from 'lucide-react';
 import type { Issue } from '@shared/types';
+import { formatTimestamp, type TimeDisplayMode } from '@/utils/timeFormatting';
 
 interface IssueViewModalProps {
   issue: Issue;
   onClose: () => void;
   onUpdate: () => void; // Trigger data refresh
+  timeDisplayMode?: TimeDisplayMode;
 }
 
 type Tab = 'description' | 'design' | 'acceptance';
 
-export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewModalProps) {
+export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMode = 'day' }: IssueViewModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>('description');
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
@@ -162,6 +164,10 @@ export default function IssueViewModal({ issue, onClose, onUpdate }: IssueViewMo
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">{issue.title}</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-1">{issue.id}</p>
+            <div className="flex gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
+              <span>Created: {formatTimestamp(issue.created_at, timeDisplayMode)}</span>
+              <span>Updated: {formatTimestamp(issue.updated_at, timeDisplayMode)}</span>
+            </div>
           </div>
           <button
             onClick={handleClose}

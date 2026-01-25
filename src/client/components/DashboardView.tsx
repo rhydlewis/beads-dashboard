@@ -17,11 +17,13 @@ import {
 import type { Metrics, TimeGranularity } from '@shared/types';
 import { GRANULARITY_OPTIONS } from '@shared/types';
 import { formatTimeValue } from '@/utils/metricsCalculations';
+import { formatTimestamp, type TimeDisplayMode } from '@/utils/timeFormatting';
 
 interface DashboardViewProps {
   metrics: Metrics;
   granularity: TimeGranularity;
   onGranularityChange: (g: TimeGranularity) => void;
+  timeDisplayMode: TimeDisplayMode;
 }
 
 interface CustomTooltipProps {
@@ -34,15 +36,17 @@ interface CustomTooltipProps {
       cycleTimeDays?: number;
       ageHours?: number;
       ageDays?: number;
+      closedDate?: number;
       closedDateStr?: string;
       status?: string;
     };
   }>;
   label?: string;
   displayUnit: 'hours' | 'days';
+  timeDisplayMode: TimeDisplayMode;
 }
 
-function CustomTooltip({ active, payload, displayUnit }: CustomTooltipProps) {
+function CustomTooltip({ active, payload, displayUnit, timeDisplayMode }: CustomTooltipProps) {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -55,7 +59,7 @@ function CustomTooltip({ active, payload, displayUnit }: CustomTooltipProps) {
         {data.ageHours !== undefined && (
           <p>Age: {formatTimeValue(data.ageHours, displayUnit)}</p>
         )}
-        {data.closedDateStr && <p>Closed: {data.closedDateStr}</p>}
+        {data.closedDate && <p>Closed: {formatTimestamp(new Date(data.closedDate), timeDisplayMode)}</p>}
         {data.status && <p>Status: {data.status}</p>}
       </div>
     );
@@ -63,7 +67,7 @@ function CustomTooltip({ active, payload, displayUnit }: CustomTooltipProps) {
   return null;
 }
 
-function DashboardView({ metrics, granularity, onGranularityChange }: DashboardViewProps) {
+function DashboardView({ metrics, granularity, onGranularityChange, timeDisplayMode }: DashboardViewProps) {
   return (
     <div className="space-y-6">
       {/* Granularity Picker */}
@@ -137,15 +141,12 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
               name="Date Closed"
               tickFormatter={(unixTime) => {
                 const date = new Date(unixTime);
-                if (metrics.displayUnit === 'hours') {
-                  return `${date.toLocaleDateString()} ${date.getHours()}:00`;
-                }
-                return date.toLocaleDateString();
+                return formatTimestamp(date, timeDisplayMode);
               }}
               type="number"
               fontSize={10}
-              angle={metrics.displayUnit === 'hours' ? -45 : 0}
-              textAnchor={metrics.displayUnit === 'hours' ? 'end' : 'middle'}
+              angle={timeDisplayMode === 'hour' ? -45 : 0}
+              textAnchor={timeDisplayMode === 'hour' ? 'end' : 'middle'}
             />
             <YAxis
               dataKey={metrics.displayUnit === 'hours' ? 'cycleTimeHours' : 'cycleTimeDays'}
@@ -153,7 +154,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
               unit={metrics.displayUnit === 'hours' ? 'h' : 'd'}
               fontSize={10}
             />
-            <Tooltip content={<CustomTooltip displayUnit={metrics.displayUnit} />} />
+            <Tooltip content={<CustomTooltip displayUnit={metrics.displayUnit} timeDisplayMode={timeDisplayMode} />} />
             <ReferenceLine
               y={metrics.displayUnit === 'hours' ? metrics.cycleTimeP50 : metrics.cycleTimeP50 / 24}
               stroke="#10b981"
@@ -202,7 +203,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
               unit={metrics.displayUnit === 'hours' ? 'h' : 'd'}
               fontSize={10}
             />
-            <Tooltip content={<CustomTooltip displayUnit={metrics.displayUnit} />} />
+            <Tooltip content={<CustomTooltip displayUnit={metrics.displayUnit} timeDisplayMode={timeDisplayMode} />} />
             <Scatter name="WIP" data={metrics.agingWipData}>
               {metrics.agingWipData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
@@ -220,7 +221,7 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
         <ResponsiveContainer width="100%" height="90%">
           <AreaChart
             data={metrics.flowChartData}
-            margin={{ bottom: metrics.displayUnit === 'hours' ? 60 : 5 }}
+            margin={{ bottom: timeDisplayMode === 'hour' ? 60 : 5 }}
           >
             <CartesianGrid
               strokeDasharray="3 3"
@@ -231,8 +232,8 @@ function DashboardView({ metrics, granularity, onGranularityChange }: DashboardV
               dataKey="date"
               fontSize={10}
               minTickGap={50}
-              angle={metrics.displayUnit === 'hours' ? -45 : 0}
-              textAnchor={metrics.displayUnit === 'hours' ? 'end' : 'middle'}
+              angle={timeDisplayMode === 'hour' ? -45 : 0}
+              textAnchor={timeDisplayMode === 'hour' ? 'end' : 'middle'}
             />
             <YAxis fontSize={10} />
             <Tooltip labelClassName="text-slate-800 font-bold" />

@@ -5,6 +5,7 @@ import { Settings, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Issue, IssueStatus } from '@shared/types';
 import { AUTO_HIDE_OPTIONS } from '@shared/constants';
 import KanbanCard from './KanbanCard';
+import type { TimeDisplayMode } from '@/utils/timeFormatting';
 
 interface KanbanColumnProps {
   status: IssueStatus;
@@ -16,6 +17,7 @@ interface KanbanColumnProps {
   hiddenCount?: number;
   showAllHidden?: boolean;
   onShowAllHiddenToggle?: (show: boolean) => void;
+  timeDisplayMode?: TimeDisplayMode;
 }
 
 function KanbanColumn({
@@ -28,6 +30,7 @@ function KanbanColumn({
   hiddenCount,
   showAllHidden,
   onShowAllHiddenToggle,
+  timeDisplayMode = 'day',
 }: KanbanColumnProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -202,6 +205,7 @@ function KanbanColumn({
                 key={issue.id}
                 issue={issue}
                 onClick={() => onCardClick(issue)}
+                timeDisplayMode={timeDisplayMode}
               />
             ))
           )}

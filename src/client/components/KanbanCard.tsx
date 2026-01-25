@@ -16,13 +16,15 @@ import {
 } from 'lucide-react';
 import type { Issue, Priority } from '@shared/types';
 import { extractShortId } from '@/utils/commonUtils';
+import { formatAge as formatAgeUtil, type TimeDisplayMode } from '@/utils/timeFormatting';
 
 interface KanbanCardProps {
   issue: Issue;
   onClick: () => void;
+  timeDisplayMode?: TimeDisplayMode;
 }
 
-function KanbanCard({ issue, onClick }: KanbanCardProps) {
+function KanbanCard({ issue, onClick, timeDisplayMode = 'day' }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -42,23 +44,12 @@ function KanbanCard({ issue, onClick }: KanbanCardProps) {
   const created = new Date(issue.created_at);
   const now = new Date();
   const ageInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
-  const ageInDays = Math.floor(ageInHours / 24);
 
   // Age badge color based on thresholds (hour-based for agent work)
   const getAgeBadgeColor = () => {
     if (ageInHours < 2) return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700';
     if (ageInHours < 4) return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700';
     return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700';
-  };
-
-  // Format age display
-  const formatAge = () => {
-    if (ageInHours < 24) {
-      const hours = ageInHours;
-      const minutes = Math.floor(((now.getTime() - created.getTime()) / (1000 * 60)) % 60);
-      return `${hours}h ${minutes}m`;
-    }
-    return `${ageInDays}d`;
   };
 
   // Priority icon and color
@@ -155,7 +146,7 @@ function KanbanCard({ issue, onClick }: KanbanCardProps) {
 
         {/* Age Badge */}
         <span className={`px-1.5 py-0.5 rounded border text-xs font-medium ${getAgeBadgeColor()}`}>
-          {formatAge()}
+          {formatAgeUtil(issue.created_at, timeDisplayMode)}
         </span>
       </div>
     </div>

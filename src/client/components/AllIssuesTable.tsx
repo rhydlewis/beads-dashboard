@@ -948,6 +948,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
             // Table will auto-refresh via Socket.IO when data changes
             // No manual refresh needed
           }}
+          timeDisplayMode={timeDisplayMode}
         />
       )}
 

@@ -209,12 +209,13 @@ function App() {
           onTimeDisplayModeChange={setTimeDisplayMode}
         />
       ) : activeTab === 'board' ? (
-        <KanbanBoard issues={parsedIssues} onRefresh={fetchData} />
+        <KanbanBoard issues={parsedIssues} onRefresh={fetchData} timeDisplayMode={timeDisplayMode} />
       ) : activeTab === 'dashboard' ? (
         <DashboardView
           metrics={metrics}
           granularity={granularity}
           onGranularityChange={setGranularity}
+          timeDisplayMode={timeDisplayMode}
         />
       ) : (
         <AgingAlertList

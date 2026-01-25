@@ -94,9 +94,9 @@ describe('KanbanCard', () => {
 
   it('displays age in hours and minutes for recent issues (< 24h)', () => {
     const recentIssue = { ...mockIssue, created_at: new Date(Date.now() - 3.5 * 60 * 60 * 1000).toISOString() };
-    renderWithDnd(<KanbanCard issue={recentIssue} onClick={mockOnClick} />);
-    // Should show format like "3h 30m"
-    expect(screen.getByText(/3h \d+m/)).toBeInTheDocument();
+    renderWithDnd(<KanbanCard issue={recentIssue} onClick={mockOnClick} timeDisplayMode="hour" />);
+    // Should show format like "0d 3h" in hour mode
+    expect(screen.getByText(/0d 3h/)).toBeInTheDocument();
   });
 
   it('displays age in days for older issues (>= 24h)', () => {

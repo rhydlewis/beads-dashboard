@@ -15,13 +15,15 @@ import { PRIORITY_LABELS } from '@shared/types';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import IssueViewModal from './IssueViewModal';
+import type { TimeDisplayMode } from '@/utils/timeFormatting';
 
 interface KanbanBoardProps {
   issues: Issue[];
   onRefresh: () => void;
+  timeDisplayMode?: TimeDisplayMode;
 }
 
-function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
+function KanbanBoard({ issues, onRefresh, timeDisplayMode = 'day' }: KanbanBoardProps) {
   const [activeIssue, setActiveIssue] = useState<Issue | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
@@ -338,6 +340,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
                 hiddenCount={status === 'closed' ? hiddenClosedCount : undefined}
                 showAllHidden={status === 'closed' ? showAllDone : undefined}
                 onShowAllHiddenToggle={status === 'closed' ? setShowAllDone : undefined}
+                timeDisplayMode={timeDisplayMode}
               />
             ))}
           </div>
@@ -347,7 +350,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
         <DragOverlay>
           {activeIssue ? (
             <div className="rotate-3 opacity-90">
-              <KanbanCard issue={activeIssue} onClick={() => {}} />
+              <KanbanCard issue={activeIssue} onClick={() => {}} timeDisplayMode={timeDisplayMode} />
             </div>
           ) : null}
         </DragOverlay>
@@ -359,6 +362,7 @@ function KanbanBoard({ issues, onRefresh }: KanbanBoardProps) {
           issue={selectedIssue}
           onClose={closeModal}
           onUpdate={onRefresh}
+          timeDisplayMode={timeDisplayMode}
         />
       )}
     </>

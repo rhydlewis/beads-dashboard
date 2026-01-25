@@ -13,10 +13,12 @@ import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
 import FilterDropdown from './FilterDropdown';
 import IssueViewModal from './IssueViewModal';
+import { formatTimestamp, type TimeDisplayMode } from '@/utils/timeFormatting';
 
 interface EpicsTableProps {
   issues: Issue[];
   onSelectChildren: (epicId: string) => void;
+  timeDisplayMode?: TimeDisplayMode;
 }
 
 type EpicSortColumn = 'id' | 'title' | 'status' | 'priority' | 'assignee' | 'created' | 'updated' | 'children';
@@ -46,7 +48,7 @@ const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 const getAgeInDays = (issue: Issue) => Math.floor((Date.now() - new Date(issue.created_at).getTime()) / DAY_IN_MS);
 
-function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
+function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: EpicsTableProps) {
   const [filterText, setFilterText] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatus[]>(() => {
     const saved = localStorage.getItem('beads-epics-filter-status');
@@ -526,10 +528,10 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
                       {epic.assignee || '—'}
                     </td>
                     <td style={getColumnStyle('created')} className="px-6 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {created.toLocaleDateString()}
+                      {formatTimestamp(created, timeDisplayMode)}
                     </td>
                     <td style={getColumnStyle('updated')} className="px-6 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {updated ? updated.toLocaleDateString() : '—'}
+                      {updated ? formatTimestamp(updated, timeDisplayMode) : '—'}
                     </td>
                   </tr>
                 );
@@ -554,6 +556,7 @@ function EpicsTable({ issues, onSelectChildren }: EpicsTableProps) {
             // Table will auto-refresh via Socket.IO when data changes
             // No manual refresh needed
           }}
+          timeDisplayMode={timeDisplayMode}
         />
       )}
     </>
