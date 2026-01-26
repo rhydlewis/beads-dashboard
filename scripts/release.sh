@@ -71,7 +71,7 @@ fi
 # Publish to npm
 echo ""
 echo "📦 Publishing to npm..."
-cd dist && npm publish && cd ..
+npm publish
 
 echo ""
 echo "✅ Release complete! Version v$NEW_VERSION published to GitHub and npm."
