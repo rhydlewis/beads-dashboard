@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { Plus, Sun, Moon, Clock, Calendar } from 'lucide-react';
+import { Plus, Sun, Moon, Clock, Calendar, PanelLeft, RectangleHorizontal, PanelRight } from 'lucide-react';
 import type { Issue, TimeGranularity, CreateIssueRequest } from '@shared/types';
 import { useMetrics } from '@/hooks/useMetrics';
 import { useTheme } from '@/hooks/useTheme';
 import { useTimeDisplayMode } from '@/hooks/useTimeDisplayMode';
+import { useWidth } from '@/hooks/useWidth';
 import DashboardView from '@/components/DashboardView';
 import AllIssuesTable from '@/components/AllIssuesTable';
 import EpicsTable from '@/components/EpicsTable';
@@ -36,6 +37,7 @@ function App() {
 
   const { isDark, toggle: toggleTheme } = useTheme();
   const [timeDisplayMode, setTimeDisplayMode] = useTimeDisplayMode();
+  const [widthMode, setWidthMode, maxWidth] = useWidth();
   const metrics = useMetrics(parsedIssues, granularity);
 
   const fetchData = async () => {
@@ -117,8 +119,37 @@ function App() {
   // Filter out tombstones for display count
   const activeIssuesCount = parsedIssues.filter((i) => i.status !== 'tombstone').length;
 
+  const cycleWidth = () => {
+    const modes: Array<'narrow' | 'medium' | 'wide'> = ['narrow', 'medium', 'wide'];
+    const currentIndex = modes.indexOf(widthMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    setWidthMode(modes[nextIndex]);
+  };
+
+  const getWidthIcon = () => {
+    switch (widthMode) {
+      case 'narrow':
+        return <PanelLeft className="w-4 h-4" />;
+      case 'medium':
+        return <RectangleHorizontal className="w-4 h-4" />;
+      case 'wide':
+        return <PanelRight className="w-4 h-4" />;
+    }
+  };
+
+  const getWidthLabel = () => {
+    switch (widthMode) {
+      case 'narrow':
+        return 'Narrow';
+      case 'medium':
+        return 'Medium';
+      case 'wide':
+        return 'Wide';
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto p-8">
+    <div className="mx-auto p-8" style={{ maxWidth }}>
       <header className="mb-8">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -279,6 +310,18 @@ function App() {
           onSubmit={handleCreateIssue}
         />
       )}
+
+      {/* Width Toggle Widget */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={cycleWidth}
+          className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium"
+          title={`Current width: ${getWidthLabel()}. Click to cycle.`}
+        >
+          {getWidthIcon()}
+          <span>{getWidthLabel()}</span>
+        </button>
+      </div>
     </div>
   );
 }
