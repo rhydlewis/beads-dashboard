@@ -4,16 +4,21 @@ import {
   ArrowUp,
   ArrowUpDown,
   Boxes,
+  Bug,
+  Box,
+  ListCheck,
   FilterX,
   PanelTopOpen,
   Search,
   Settings,
+  Play,
+  Check,
 } from 'lucide-react';
 import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
 import FilterDropdown from './FilterDropdown';
 import IssueViewModal from './IssueViewModal';
-import { formatTimestamp, type TimeDisplayMode } from '@/utils/timeFormatting';
+import { formatTimestamp, formatAge, formatCycleTime, type TimeDisplayMode } from '@/utils/timeFormatting';
 
 interface EpicsTableProps {
   issues: Issue[];
@@ -21,7 +26,7 @@ interface EpicsTableProps {
   timeDisplayMode?: TimeDisplayMode;
 }
 
-type EpicSortColumn = 'id' | 'title' | 'status' | 'priority' | 'assignee' | 'created' | 'updated' | 'children';
+type EpicSortColumn = 'id' | 'title' | 'type' | 'status' | 'priority' | 'assignee' | 'created' | 'updated' | 'children' | 'cycleTime' | 'age' | 'actions';
 
 interface ColumnConfig {
   key: EpicSortColumn;
@@ -35,18 +40,29 @@ interface ColumnConfig {
 const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
   { key: 'id', label: 'ID', visible: true, width: 120, minWidth: 80, resizable: true },
   { key: 'title', label: 'Title', visible: true, width: 300, minWidth: 150, resizable: true },
+  { key: 'type', label: 'Type', visible: true, width: 100, minWidth: 80, resizable: true },
   { key: 'children', label: 'Children', visible: true, width: 140, minWidth: 100, resizable: true },
   { key: 'status', label: 'Status', visible: true, width: 130, minWidth: 100, resizable: true },
   { key: 'priority', label: 'Priority', visible: true, width: 120, minWidth: 100, resizable: true },
   { key: 'assignee', label: 'Assignee', visible: true, width: 140, minWidth: 100, resizable: true },
   { key: 'created', label: 'Created', visible: true, width: 120, minWidth: 100, resizable: true },
   { key: 'updated', label: 'Updated', visible: true, width: 120, minWidth: 100, resizable: true },
+  { key: 'cycleTime', label: 'Cycle Time', visible: true, width: 100, minWidth: 80, resizable: true },
+  { key: 'age', label: 'Age', visible: true, width: 80, minWidth: 60, resizable: true },
+  { key: 'actions', label: 'Actions', visible: true, width: 120, minWidth: 100, resizable: false },
 ];
 
 const CLOSED_CHILD_STATUSES: IssueStatus[] = ['closed', 'tombstone'];
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 const getAgeInDays = (issue: Issue) => Math.floor((Date.now() - new Date(issue.created_at).getTime()) / DAY_IN_MS);
+
+const getCycleTimeDays = (issue: Issue) => {
+  if (issue.status !== 'closed' || !issue.updated_at) return null;
+  const created = new Date(issue.created_at).getTime();
+  const updated = new Date(issue.updated_at).getTime();
+  return Math.ceil((updated - created) / DAY_IN_MS);
+};
 
 function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: EpicsTableProps) {
   const [filterText, setFilterText] = useState('');
@@ -64,6 +80,7 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
     direction: 'asc',
   }));
   const [activeDescription, setActiveDescription] = useState<Issue | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() => {
     const saved = localStorage.getItem('beads-epics-column-config');
@@ -175,6 +192,14 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
 
   const getChildCounts = (epicId: string) => childCountMap.get(epicId) ?? { open: 0, total: 0 };
 
+  const getTypeIcon = (type: string) => {
+    const t = (type || '').toLowerCase();
+    if (t === 'bug') return <Bug className="w-3 h-3" />;
+    if (t === 'feature') return <Box className="w-3 h-3" />;
+    if (t === 'epic') return <Boxes className="w-3 h-3" />;
+    return <ListCheck className="w-3 h-3" />;
+  };
+
   const filteredEpics = epics.filter((epic) => {
     if (statusFilter.length > 0 && !statusFilter.includes(epic.status)) return false;
     if (priorityFilter.length > 0 && !priorityFilter.includes(epic.priority)) return false;
@@ -199,6 +224,8 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
         return compareStrings(a.id, b.id);
       case 'title':
         return compareStrings(a.title || '', b.title || '');
+      case 'type':
+        return compareStrings(a.issue_type, b.issue_type);
       case 'status':
         return compareStrings(a.status, b.status);
       case 'priority':
@@ -212,6 +239,10 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
           a.updated_at ? new Date(a.updated_at).getTime() : 0,
           b.updated_at ? new Date(b.updated_at).getTime() : 0
         );
+      case 'cycleTime':
+        return compareNumbers(getCycleTimeDays(a) ?? Number.POSITIVE_INFINITY, getCycleTimeDays(b) ?? Number.POSITIVE_INFINITY);
+      case 'age':
+        return compareNumbers(getAgeInDays(a), getAgeInDays(b));
       case 'children': {
         const countsA = getChildCounts(a.id);
         const countsB = getChildCounts(b.id);
@@ -281,6 +312,28 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
         col.key === columnKey ? { ...col, visible: !col.visible } : col
       )
     );
+  };
+
+  const handleStatusUpdate = async (issueId: string, newStatus: IssueStatus) => {
+    setUpdatingStatus(issueId);
+    try {
+      const res = await fetch(`/api/issues/${issueId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      // Data will auto-refresh via Socket.IO
+    } catch (error) {
+      console.error('Failed to update issue status:', error);
+      alert('Failed to update issue status. Please try again.');
+    } finally {
+      setUpdatingStatus(null);
+    }
   };
 
   const getColumnStyle = (columnKey: EpicSortColumn): React.CSSProperties => {
@@ -432,9 +485,8 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {sortedEpics.map((epic) => {
                 const childCounts = getChildCounts(epic.id);
-                const created = new Date(epic.created_at);
-                const updated = epic.updated_at ? new Date(epic.updated_at) : null;
                 const ageInDays = getAgeInDays(epic);
+                const isClosed = epic.status === 'closed';
                 const isComplete = childCounts.total > 0 && childCounts.open === 0;
                 const isAllOpen = childCounts.total > 0 && childCounts.open === childCounts.total;
                 const childClass = childCounts.total === 0
@@ -447,6 +499,12 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                 const completion = childCounts.total === 0
                   ? 0
                   : ((childCounts.total - childCounts.open) / childCounts.total) * 100;
+
+                // Format timestamps using the selected display mode
+                const createdDisplay = formatTimestamp(epic.created_at, timeDisplayMode);
+                const updatedDisplay = formatTimestamp(epic.updated_at, timeDisplayMode);
+                const cycleTime = formatCycleTime(epic.created_at, epic.closed_at, timeDisplayMode);
+                const age = !isClosed ? formatAge(epic.created_at, timeDisplayMode) : '-';
 
                 return (
                   <tr
@@ -463,7 +521,6 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                     <td style={getColumnStyle('title')} className="px-6 py-3 font-medium text-slate-900 dark:text-slate-100">
                       <div className="flex items-center gap-2">
                         <span>{epic.title || 'Untitled epic'}</span>
-                        <span className="text-xs text-slate-400 dark:text-slate-500">{ageInDays}d old</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -475,6 +532,12 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                           <PanelTopOpen className="w-3.5 h-3.5" />
                         </button>
                       </div>
+                    </td>
+                    <td style={getColumnStyle('type')} className="px-6 py-3">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+                        {getTypeIcon(epic.issue_type)}
+                        {epic.issue_type}
+                      </span>
                     </td>
                     <td style={getColumnStyle('children')} className="px-6 py-3">
                       <button
@@ -528,17 +591,66 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                       {epic.assignee || '—'}
                     </td>
                     <td style={getColumnStyle('created')} className="px-6 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {formatTimestamp(created, timeDisplayMode)}
+                      {createdDisplay}
                     </td>
                     <td style={getColumnStyle('updated')} className="px-6 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {updated ? formatTimestamp(updated, timeDisplayMode) : '—'}
+                      {updatedDisplay}
+                    </td>
+                    <td className={`px-6 py-3 ${cycleTime === '-' ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100'}`} style={getColumnStyle('cycleTime')}>
+                      {cycleTime}
+                    </td>
+                    <td className={`px-6 py-3 ${age !== '-' && ageInDays > 30 ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-slate-900 dark:text-slate-100'}`} style={getColumnStyle('age')}>
+                      {age}
+                    </td>
+                    <td className="px-6 py-3" style={getColumnStyle('actions')}>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {epic.status === 'blocked' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusUpdate(epic.id, 'in_progress');
+                            }}
+                            disabled={updatingStatus === epic.id}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors disabled:opacity-50"
+                            title="Resume Progress"
+                          >
+                            <Play className="w-4 h-4" />
+                          </button>
+                        )}
+                        {epic.status !== 'in_progress' && epic.status !== 'closed' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusUpdate(epic.id, 'in_progress');
+                            }}
+                            disabled={updatingStatus === epic.id}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors disabled:opacity-50"
+                            title="Start Progress"
+                          >
+                            <Play className="w-4 h-4" />
+                          </button>
+                        )}
+                        {epic.status !== 'closed' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusUpdate(epic.id, 'closed');
+                            }}
+                            disabled={updatingStatus === epic.id}
+                            className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors disabled:opacity-50"
+                            title="Close Epic"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
               })}
               {sortedEpics.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+                  <td colSpan={12} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
                     No epics found. Epics are larger initiatives containing multiple issues.
                   </td>
                 </tr>
