@@ -24,7 +24,10 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "start": "NODE_ENV=production node dist/server/server/index.js",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "release:patch": "./scripts/release.sh patch",
+    "release:minor": "./scripts/release.sh minor",
+    "release:major": "./scripts/release.sh major"
   },
   "keywords": [
     "beads",
