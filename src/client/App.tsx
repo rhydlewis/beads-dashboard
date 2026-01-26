@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { Plus, Sun, Moon } from 'lucide-react';
+import { Plus, Sun, Moon, Clock, Calendar } from 'lucide-react';
 import type { Issue, TimeGranularity, CreateIssueRequest } from '@shared/types';
 import { useMetrics } from '@/hooks/useMetrics';
 import { useTheme } from '@/hooks/useTheme';
@@ -135,6 +135,13 @@ function App() {
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
             <button
+              onClick={() => setTimeDisplayMode(timeDisplayMode === 'day' ? 'hour' : 'day')}
+              className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+              title={timeDisplayMode === 'day' ? 'Switch to hours view' : 'Switch to days view'}
+            >
+              {timeDisplayMode === 'day' ? <Clock className="w-5 h-5" /> : <Calendar className="w-5 h-5" />}
+            </button>
+            <button
               onClick={() => setShowCreationModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
             >
@@ -206,7 +213,6 @@ function App() {
         <TableView
           issues={parsedIssues}
           timeDisplayMode={timeDisplayMode}
-          onTimeDisplayModeChange={setTimeDisplayMode}
         />
       ) : activeTab === 'board' ? (
         <KanbanBoard issues={parsedIssues} onRefresh={fetchData} timeDisplayMode={timeDisplayMode} />
@@ -222,6 +228,7 @@ function App() {
           issues={parsedIssues}
           onConfigureClick={() => setShowConfigModal(true)}
           thresholdConfig={thresholdConfig}
+          timeDisplayMode={timeDisplayMode}
         />
       )}
 

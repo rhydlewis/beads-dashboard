@@ -7,10 +7,9 @@ import EpicsTable from './EpicsTable';
 interface TableViewProps {
   issues: Issue[];
   timeDisplayMode: TimeDisplayMode;
-  onTimeDisplayModeChange: (mode: TimeDisplayMode) => void;
 }
 
-function TableView({ issues, timeDisplayMode, onTimeDisplayModeChange }: TableViewProps) {
+function TableView({ issues, timeDisplayMode }: TableViewProps) {
   const [activeView, setActiveView] = useState<'issues' | 'epics'>('issues');
   const [focusedEpicId, setFocusedEpicId] = useState<string | null>(null);
 
@@ -50,7 +49,6 @@ function TableView({ issues, timeDisplayMode, onTimeDisplayModeChange }: TableVi
           focusedEpicId={focusedEpicId}
           onClearFocusedEpic={() => setFocusedEpicId(null)}
           timeDisplayMode={timeDisplayMode}
-          onTimeDisplayModeChange={onTimeDisplayModeChange}
         />
       ) : (
         <EpicsTable

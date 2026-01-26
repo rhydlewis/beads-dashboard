@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { AlertTriangle, AlertOctagon, Clock, User, Bug, Box, Boxes, ListCheck, Filter } from 'lucide-react';
 import type { Issue } from '@shared/types';
+import type { TimeDisplayMode } from '@/utils/timeFormatting';
+import { formatTimestamp } from '@/utils/timeFormatting';
 import {
   AgingThresholdConfig,
   getAgingIssues,
@@ -11,9 +13,10 @@ interface AgingAlertListProps {
   issues: Issue[];
   onConfigureClick: () => void;
   thresholdConfig: AgingThresholdConfig;
+  timeDisplayMode: TimeDisplayMode;
 }
 
-export function AgingAlertList({ issues, onConfigureClick, thresholdConfig }: AgingAlertListProps) {
+export function AgingAlertList({ issues, onConfigureClick, thresholdConfig, timeDisplayMode }: AgingAlertListProps) {
   const [today] = useState(() => new Date());
   const [filterStatus, setFilterStatus] = useState<'all' | 'warning' | 'critical'>('all');
   const [filterAssignee, setFilterAssignee] = useState<string | null>(null);
@@ -203,7 +206,7 @@ export function AgingAlertList({ issues, onConfigureClick, thresholdConfig }: Ag
               ) : (
                 filteredIssues.map(({ issue, ageDisplay, status, ageHours }) => {
                   const shortId = extractShortId(issue.id);
-                  const createdDate = new Date(issue.created_at);
+                  const createdDisplay = formatTimestamp(issue.created_at, timeDisplayMode);
 
                   return (
                     <tr
@@ -261,7 +264,7 @@ export function AgingAlertList({ issues, onConfigureClick, thresholdConfig }: Ag
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                        {createdDate.toLocaleDateString()}
+                        {createdDisplay}
                       </td>
                     </tr>
                   );
