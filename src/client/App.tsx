@@ -6,7 +6,8 @@ import { useMetrics } from '@/hooks/useMetrics';
 import { useTheme } from '@/hooks/useTheme';
 import { useTimeDisplayMode } from '@/hooks/useTimeDisplayMode';
 import DashboardView from '@/components/DashboardView';
-import TableView from '@/components/TableView';
+import AllIssuesTable from '@/components/AllIssuesTable';
+import EpicsTable from '@/components/EpicsTable';
 import { AgingAlertBadge } from '@/components/AgingAlertBadge';
 import { AgingAlertList } from '@/components/AgingAlertList';
 import KanbanBoard from '@/components/KanbanBoard';
@@ -18,10 +19,13 @@ function App() {
   const [parsedIssues, setParsedIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'table' | 'board' | 'dashboard' | 'aging'>(() => {
+  const [activeTab, setActiveTab] = useState<'issues' | 'epics' | 'board' | 'dashboard' | 'aging'>(() => {
     const saved = localStorage.getItem('beads-active-tab');
-    return (saved as 'table' | 'board' | 'dashboard' | 'aging') || 'table';
+    // Migrate old 'table' value to 'issues'
+    if (saved === 'table') return 'issues';
+    return (saved as 'issues' | 'epics' | 'board' | 'dashboard' | 'aging') || 'issues';
   });
+  const [focusedEpicId, setFocusedEpicId] = useState<string | null>(null);
   const [granularity, setGranularity] = useState<TimeGranularity>(() => {
     const saved = localStorage.getItem('beads-granularity');
     return (saved as TimeGranularity) || 'daily';
@@ -64,6 +68,11 @@ function App() {
     }
 
     // Data will auto-refresh via Socket.IO
+  };
+
+  const handleSelectChildren = (epicId: string) => {
+    setFocusedEpicId(epicId);
+    setActiveTab('issues');
   };
 
   useEffect(() => {
@@ -160,13 +169,23 @@ function App() {
         <div className="flex space-x-4 border-b border-slate-200 dark:border-slate-700">
           <button
             className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
-              activeTab === 'table'
+              activeTab === 'issues'
                 ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
-            onClick={() => setActiveTab('table')}
+            onClick={() => setActiveTab('issues')}
           >
-            All Issues
+            Issues
+          </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
+              activeTab === 'epics'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+            onClick={() => setActiveTab('epics')}
+          >
+            Epics
           </button>
           <button
             className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
@@ -209,9 +228,17 @@ function App() {
         <div className="card border-dashed border-2 border-slate-300 dark:border-slate-600 py-20 text-center text-slate-400 dark:text-slate-500">
           No issues found in .beads directory.
         </div>
-      ) : activeTab === 'table' ? (
-        <TableView
+      ) : activeTab === 'issues' ? (
+        <AllIssuesTable
           issues={parsedIssues}
+          focusedEpicId={focusedEpicId}
+          onClearFocusedEpic={() => setFocusedEpicId(null)}
+          timeDisplayMode={timeDisplayMode}
+        />
+      ) : activeTab === 'epics' ? (
+        <EpicsTable
+          issues={parsedIssues}
+          onSelectChildren={handleSelectChildren}
           timeDisplayMode={timeDisplayMode}
         />
       ) : activeTab === 'board' ? (
