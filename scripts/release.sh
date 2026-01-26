@@ -35,6 +35,11 @@ if [[ -n "$BEAD_ID" ]]; then
   bd close "$BEAD_ID"
 fi
 
+# Build the project
+echo ""
+echo "🔨 Building project..."
+npm run build
+
 # Run npm version
 echo ""
 echo "📦 Bumping version ($VERSION_BUMP)..."
@@ -63,9 +68,14 @@ else
   gh release create "v$NEW_VERSION" --generate-notes
 fi
 
+# Publish to npm
 echo ""
-echo "✅ Release complete! Version v$NEW_VERSION published."
+echo "📦 Publishing to npm..."
+cd dist && npm publish && cd ..
+
+echo ""
+echo "✅ Release complete! Version v$NEW_VERSION published to GitHub and npm."
 echo ""
 echo "📝 Next steps:"
 echo "   - Review the release at: https://github.com/$(git config --get remote.origin.url | sed 's/.*github.com[:/]\(.*\)\.git/\1/')/releases/tag/v$NEW_VERSION"
-echo "   - Publish to npm: cd dist && npm publish"
+echo "   - Check npm package at: https://www.npmjs.com/package/beads-dashboard"
