@@ -19,6 +19,7 @@ import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
 import FilterDropdown from './FilterDropdown';
 import IssueViewModal from './IssueViewModal';
+import DependenciesModal from './DependenciesModal';
 import { formatTimestamp, formatAge, formatCycleTime, type TimeDisplayMode } from '@/utils/timeFormatting';
 
 interface EpicsTableProps {
@@ -82,6 +83,8 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
   }));
   const [activeDescription, setActiveDescription] = useState<Issue | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [dependenciesIssue, setDependenciesIssue] = useState<Issue | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; issue: Issue } | null>(null);
 
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() => {
     const saved = localStorage.getItem('beads-epics-column-config');
@@ -113,20 +116,24 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
   }, [columnConfigs]);
 
   useEffect(() => {
-    const handleClickOutside = () => setOpenDropdown(null);
-    if (openDropdown) {
+    const handleClickOutside = () => {
+      setOpenDropdown(null);
+      setColumnMenuOpen(false);
+      setContextMenu(null);
+    };
+    if (openDropdown || columnMenuOpen || contextMenu) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [openDropdown]);
+  }, [openDropdown, columnMenuOpen, contextMenu]);
 
+  // Handle context menu close on scroll
   useEffect(() => {
-    const handleClickOutside = () => setColumnMenuOpen(false);
-    if (columnMenuOpen) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [columnMenuOpen]);
+    if (!contextMenu) return;
+    const handleScroll = () => setContextMenu(null);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [contextMenu]);
 
   useEffect(() => {
     if (!resizingColumn) return;
@@ -203,6 +210,23 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, issue: Issue) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, issue });
+  };
+
+  const handleShowDependencies = (issue: Issue) => {
+    setDependenciesIssue(issue);
+    setContextMenu(null);
+  };
+
+  const handleViewIssueFromDependencies = (issueId: string) => {
+    const issue = issues.find(i => i.id === issueId);
+    if (issue) {
+      setActiveDescription(issue);
+    }
   };
 
   const filteredEpics = epics.filter((epic) => {
@@ -516,6 +540,7 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                     key={epic.id}
                     className="group hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-l-4 border-indigo-100/70 dark:border-indigo-800/70"
                     onClick={() => openDescription(epic)}
+                    onContextMenu={(e) => handleContextMenu(e, epic)}
                   >
                     <td style={getColumnStyle('id')} className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       <div className="flex items-center gap-2">
@@ -684,6 +709,31 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
             // No manual refresh needed
           }}
           timeDisplayMode={timeDisplayMode}
+          onShowDependencies={handleShowDependencies}
+        />
+      )}
+
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-48"
+          style={{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+            onClick={() => handleShowDependencies(contextMenu.issue)}
+          >
+            <span>Show Dependencies</span>
+          </button>
+        </div>
+      )}
+
+      {dependenciesIssue && (
+        <DependenciesModal
+          issueId={dependenciesIssue.id}
+          issueTitle={dependenciesIssue.title}
+          onClose={() => setDependenciesIssue(null)}
+          onViewIssue={handleViewIssueFromDependencies}
         />
       )}
     </>

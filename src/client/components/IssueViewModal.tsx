@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { X, Edit2, FileText, Palette, CheckSquare } from 'lucide-react';
+import { X, Edit2, FileText, Palette, CheckSquare, GitBranch } from 'lucide-react';
 import type { Issue } from '@shared/types';
 import { formatTimestamp, type TimeDisplayMode } from '@/utils/timeFormatting';
 
@@ -10,11 +10,12 @@ interface IssueViewModalProps {
   onClose: () => void;
   onUpdate: () => void; // Trigger data refresh
   timeDisplayMode?: TimeDisplayMode;
+  onShowDependencies?: (issue: Issue) => void; // Optional handler to show dependencies
 }
 
 type Tab = 'description' | 'design' | 'acceptance';
 
-export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMode = 'day' }: IssueViewModalProps) {
+export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMode = 'day', onShowDependencies }: IssueViewModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>('description');
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
@@ -169,13 +170,25 @@ export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMo
               <span>Updated: {formatTimestamp(issue.updated_at, timeDisplayMode)}</span>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors p-1"
-            aria-label="Close modal"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onShowDependencies && (
+              <button
+                onClick={() => onShowDependencies(issue)}
+                className="text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors p-1"
+                aria-label="Show dependencies"
+                title="Show dependencies"
+              >
+                <GitBranch className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={handleClose}
+              className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors p-1"
+              aria-label="Close modal"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}

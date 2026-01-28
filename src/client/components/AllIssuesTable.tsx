@@ -30,6 +30,7 @@ import FilterDropdown from './FilterDropdown';
 import EpicFilterDropdown from './EpicFilterDropdown';
 import IssueViewModal from './IssueViewModal';
 import IssueCreationModal from './IssueCreationModal';
+import DependenciesModal from './DependenciesModal';
 
 interface AllIssuesTableProps {
   issues: Issue[];
@@ -97,6 +98,8 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
   const [activeDescription, setActiveDescription] = useState<Issue | null>(null);
   const [childFilter, setChildFilter] = useState<string | null>(null);
   const [showCreationModal, setShowCreationModal] = useState(false);
+  const [dependenciesIssue, setDependenciesIssue] = useState<Issue | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; issue: Issue } | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<IssueStatus[]>(() => {
     const saved = localStorage.getItem('beads-filter-status');
@@ -178,12 +181,21 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
     const handleClickOutside = () => {
       setOpenDropdown(null);
       setShowColumnMenu(false);
+      setContextMenu(null);
     };
-    if (openDropdown || showColumnMenu) {
+    if (openDropdown || showColumnMenu || contextMenu) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [openDropdown, showColumnMenu]);
+  }, [openDropdown, showColumnMenu, contextMenu]);
+
+  // Handle context menu close on scroll
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleScroll = () => setContextMenu(null);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [contextMenu]);
 
   // Persist column configuration
   useEffect(() => {
@@ -383,6 +395,23 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, issue: Issue) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, issue });
+  };
+
+  const handleShowDependencies = (issue: Issue) => {
+    setDependenciesIssue(issue);
+    setContextMenu(null);
+  };
+
+  const handleViewIssueFromDependencies = (issueId: string) => {
+    const issue = issues.find(i => i.id === issueId);
+    if (issue) {
+      setActiveDescription(issue);
+    }
   };
 
   const toggleFilterValue = (filterType: string, value: string | number) => {
@@ -769,7 +798,11 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
                     : null;
 
                 return (
-                  <tr key={issue.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group">
+                  <tr
+                    key={issue.id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group"
+                    onContextMenu={(e) => handleContextMenu(e, issue)}
+                  >
                     <td className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" style={getColumnStyle('id')}>
                       <div className="flex items-center gap-2">
                         <span>{shortId}</span>
@@ -941,6 +974,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
             // No manual refresh needed
           }}
           timeDisplayMode={timeDisplayMode}
+          onShowDependencies={handleShowDependencies}
         />
       )}
 
@@ -948,6 +982,30 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
         <IssueCreationModal
           onClose={() => setShowCreationModal(false)}
           onSubmit={handleCreateIssue}
+        />
+      )}
+
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-48"
+          style={{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+            onClick={() => handleShowDependencies(contextMenu.issue)}
+          >
+            <span>Show Dependencies</span>
+          </button>
+        </div>
+      )}
+
+      {dependenciesIssue && (
+        <DependenciesModal
+          issueId={dependenciesIssue.id}
+          issueTitle={dependenciesIssue.title}
+          onClose={() => setDependenciesIssue(null)}
+          onViewIssue={handleViewIssueFromDependencies}
         />
       )}
     </>

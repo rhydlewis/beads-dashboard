@@ -54,6 +54,27 @@ export interface Issue {
   blocked_by?: string[]; // IDs of issues blocking this one
 }
 
+// Dependency info returned from bd dep list --json
+export interface DependencyInfo {
+  id: string;
+  title: string;
+  description?: string;
+  status: IssueStatus;
+  priority: Priority;
+  issue_type: IssueType;
+  owner?: string;
+  created_at: string;
+  created_by?: string;
+  updated_at?: string;
+  dependency_type?: string; // Type of dependency (e.g., "blocks")
+}
+
+// Response from GET /api/issues/:id/dependencies
+export interface DependenciesResponse {
+  dependencies: DependencyInfo[]; // What this issue depends on (blocks me)
+  dependents: DependencyInfo[]; // What depends on this issue (I block)
+}
+
 // Data point for lead time scatterplot
 export interface LeadTimeDataPoint {
   id: string;

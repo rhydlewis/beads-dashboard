@@ -386,6 +386,56 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
   });
 
   /**
+   * GET /api/issues/:id/dependencies
+   * Returns dependency data for a specific issue (both what it depends on and what depends on it)
+   */
+  router.get('/issues/:id/dependencies', async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    console.log(`[API] Fetching dependencies for issue ${id}`);
+
+    try {
+      // Fetch what this issue depends on (direction=down)
+      const dependenciesOutput = await new Promise<string>((resolve, reject) => {
+        exec(`bd dep list ${id} --direction=down --json`, { cwd: projectRoot }, (error, stdout, stderr) => {
+          if (error) {
+            console.error(`[API] bd dep list error: ${error}`);
+            console.error(`[API] stderr: ${stderr}`);
+            return reject(new Error(stderr || error.message));
+          }
+          resolve(stdout);
+        });
+      });
+
+      // Fetch what depends on this issue (direction=up)
+      const dependentsOutput = await new Promise<string>((resolve, reject) => {
+        exec(`bd dep list ${id} --direction=up --json`, { cwd: projectRoot }, (error, stdout, stderr) => {
+          if (error) {
+            console.error(`[API] bd dep list error: ${error}`);
+            console.error(`[API] stderr: ${stderr}`);
+            return reject(new Error(stderr || error.message));
+          }
+          resolve(stdout);
+        });
+      });
+
+      const dependencies = JSON.parse(dependenciesOutput || '[]');
+      const dependents = JSON.parse(dependentsOutput || '[]');
+
+      console.log(`[API] Found ${dependencies.length} dependencies and ${dependents.length} dependents`);
+
+      res.json({
+        dependencies,
+        dependents,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`[API] Error fetching dependencies: ${errorMessage}`);
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  /**
    * POST /api/issues/:id/acceptance
    * Updates issue acceptance criteria via bd update command
    */
