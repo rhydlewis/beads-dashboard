@@ -13,6 +13,7 @@ import {
   Settings,
   Play,
   Check,
+  Copy,
 } from 'lucide-react';
 import type { Issue, IssueStatus, Priority } from '@shared/types';
 import { PRIORITY_LABELS } from '@shared/types';
@@ -198,6 +199,10 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
     if (t === 'feature') return <Box className="w-3 h-3" />;
     if (t === 'epic') return <Boxes className="w-3 h-3" />;
     return <ListCheck className="w-3 h-3" />;
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   const filteredEpics = epics.filter((epic) => {
@@ -516,6 +521,16 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                       <div className="flex items-center gap-2">
                         <Boxes className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
                         <span>{epic.id.includes('-') ? epic.id.split('-').pop() : epic.id}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(epic.id);
+                          }}
+                          className="text-slate-300 hover:text-slate-600 dark:text-slate-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Copy full ID"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </td>
                     <td style={getColumnStyle('title')} className="px-6 py-3 font-medium text-slate-900 dark:text-slate-100">
