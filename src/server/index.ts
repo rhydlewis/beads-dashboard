@@ -7,6 +7,7 @@ import minimist from 'minimist';
 import { fileURLToPath } from 'url';
 import { createApiRouter } from './routes/api.js';
 import { beadsDirectoryExists } from './utils/beadsReader.js';
+import { logger } from './utils/logger.js';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -41,7 +42,7 @@ app.use(express.json());
 // Serve static files in production
 if (isProduction) {
   const distPath = path.join(__dirname, '../../client');
-  console.log(`Serving static files from: ${distPath}`);
+  logger.info({ distPath }, 'Serving static files');
   app.use(express.static(distPath));
 }
 
@@ -58,16 +59,16 @@ if (isProduction) {
   });
 }
 
-console.log(`Starting Beads Dashboard Server...`);
-console.log(`Environment: ${isProduction ? 'production' : 'development'}`);
-console.log(`Watching directory: ${projectRoot}`);
+logger.info('Starting Beads Dashboard Server...');
+logger.info({ environment: isProduction ? 'production' : 'development' }, 'Environment');
+logger.info({ projectRoot }, 'Watching directory');
 
 // Watch for changes to beads.db (SQLite database)
 const beadsDir = path.join(projectRoot, '.beads');
 const beadsDbPath = path.join(beadsDir, 'beads.db');
 
 if (beadsDirectoryExists(projectRoot)) {
-  console.log(`Setting up file watcher for: ${beadsDbPath}`);
+  logger.info({ beadsDbPath }, 'Setting up file watcher');
   const watcher = chokidar.watch(beadsDbPath, {
     persistent: true,
     ignoreInitial: true, // Don't trigger on startup - only on actual changes
@@ -78,7 +79,7 @@ if (beadsDirectoryExists(projectRoot)) {
   });
 
   watcher.on('ready', () => {
-    console.log('File watcher ready');
+    logger.info('File watcher ready');
   });
 
   // Use 'change' event to catch database updates
@@ -90,17 +91,17 @@ if (beadsDirectoryExists(projectRoot)) {
       clearTimeout(refreshTimeout);
     }
     refreshTimeout = setTimeout(() => {
-      console.log('Database changed - emitting refresh');
+      logger.info({ event: 'refresh' }, 'Database changed - emitting refresh to clients');
       io.emit('refresh');
       refreshTimeout = null;
     }, 10000); // 10 second debounce to batch daemon activity
   });
 
   watcher.on('error', (error) => {
-    console.error('Watcher error:', error);
+    logger.error({ err: error }, 'Watcher error');
   });
 } else {
-  console.log(`No .beads directory found at ${beadsDir}. Waiting for it to be created...`);
+  logger.info({ beadsDir }, 'No .beads directory found. Waiting for it to be created...');
 
   // Watch parent directory for .beads creation
   const watcher = chokidar.watch(projectRoot, {
@@ -111,7 +112,7 @@ if (beadsDirectoryExists(projectRoot)) {
 
   watcher.on('addDir', (dirPath) => {
     if (path.basename(dirPath) === '.beads') {
-      console.log('.beads directory created! Emitting refresh...');
+      logger.info({ dirPath }, '.beads directory created! Emitting refresh...');
       io.emit('refresh');
     }
   });
@@ -119,37 +120,37 @@ if (beadsDirectoryExists(projectRoot)) {
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('Client connected');
+  logger.info({ socketId: socket.id }, 'Client connected');
   socket.on('disconnect', () => {
-    console.log('Client disconnected');
+    logger.info({ socketId: socket.id }, 'Client disconnected');
   });
 });
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  logger.info({ port: PORT, url: `http://localhost:${PORT}` }, 'Server running');
 });
 
 // Handle server errors
 server.on('error', (error: NodeJS.ErrnoException) => {
   if (error.code === 'EADDRINUSE') {
-    console.error(`\nError: Port ${PORT} is already in use.`);
-    console.error(`\nTry one of the following:`);
-    console.error(`  • Stop the other process using port ${PORT}`);
-    console.error(`  • Run with a different port: beads-dashboard --port=<PORT>`);
-    console.error(`  • Find the process: lsof -ti:${PORT}\n`);
+    logger.error({ port: PORT, err: error }, `Port ${PORT} is already in use`);
+    logger.error(`\nTry one of the following:`);
+    logger.error(`  • Stop the other process using port ${PORT}`);
+    logger.error(`  • Run with a different port: beads-dashboard --port=<PORT>`);
+    logger.error(`  • Find the process: lsof -ti:${PORT}\n`);
     process.exit(1);
   } else {
-    console.error('Server error:', error);
+    logger.error({ err: error }, 'Server error');
     process.exit(1);
   }
 });
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, closing server...');
+  logger.info('SIGTERM received, closing server...');
   server.close(() => {
-    console.log('Server closed');
+    logger.info('Server closed');
     process.exit(0);
   });
 });

@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import type { Issue } from '../../shared/types.js';
 import { CLI_BUFFER_SIZE } from '../../shared/constants.js';
+import { logger } from './logger.js';
 
 const execAsync = promisify(exec);
 
@@ -30,7 +31,7 @@ export async function readBeadsData(projectRoot: string): Promise<Issue[]> {
     });
 
     if (stderr) {
-      console.warn('bd export stderr:', stderr);
+      logger.warn({ stderr }, 'bd export stderr output');
     }
 
     if (!stdout.trim()) {
@@ -65,7 +66,7 @@ export async function readBeadsData(projectRoot: string): Promise<Issue[]> {
 
     return issues;
   } catch (error) {
-    console.error('Error reading beads data from database:', error);
+    logger.error({ err: error }, 'Error reading beads data from database');
     // Fall back to empty array if bd command fails
     return [];
   }

@@ -5,6 +5,7 @@ import path from 'path';
 import os from 'os';
 import { ZodError } from 'zod';
 import { readBeadsData } from '../utils/beadsReader.js';
+import { logger } from '../utils/logger.js';
 import type {
   UpdateIssueDescriptionRequest,
   UpdateIssueStatusRequest,
@@ -35,7 +36,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       const data = await readBeadsData(projectRoot);
       res.json(data);
     } catch (err) {
-      console.error(err);
+      logger.error({ err }, 'Failed to read beads data');
       res.status(500).json({ error: 'Failed to read data' });
     }
   });
@@ -45,7 +46,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
    * Creates a new issue via bd create command
    */
   router.post('/issues', async (req: Request, res: Response) => {
-    console.log('[API] Creating new issue with body:', req.body);
+    logger.info({ body: req.body }, 'Creating new issue');
 
     // Validate input
     try {
@@ -70,7 +71,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
         fs.writeFileSync(tempFile, description, { mode: 0o600 });
         command += ` --body-file="${tempFile}"`;
       } catch (error) {
-        console.error('[API] Failed to write temp file:', error);
+        logger.error({ err: error, tempFile }, 'Failed to write temp file');
         return res.status(500).json({ error: 'Failed to prepare issue description' });
       }
     }
@@ -83,17 +84,16 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
             try {
               fs.unlinkSync(tempFile);
             } catch (cleanupError) {
-              console.error('[API] Failed to cleanup temp file:', cleanupError);
+              logger.error({ err: cleanupError, tempFile }, 'Failed to cleanup temp file');
             }
           }
 
           if (error) {
-            console.error(`[API] bd create error: ${error}`);
-            console.error(`[API] stderr: ${stderr}`);
+            logger.error({ err: error, stderr }, 'bd create error');
             return reject(new Error(stderr || error.message));
           }
 
-          console.log(`[API] bd create stdout: ${stdout}`);
+          logger.debug({ stdout }, 'bd create output');
           resolve(stdout);
         });
       });
@@ -103,7 +103,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       const match = output.match(/Created issue: ([\w-]+)/);
       const issueId = match ? match[1] : undefined;
 
-      console.log(`[API] Successfully created issue: ${issueId}`);
+      logger.info({ issueId }, 'Successfully created issue');
 
       // Fetch the created issue data
       let issue = undefined;
@@ -112,7 +112,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
           const allIssues = await readBeadsData(projectRoot);
           issue = allIssues.find(i => i.id === issueId);
         } catch (error) {
-          console.error('[API] Failed to fetch created issue:', error);
+          logger.error({ err: error, issueId }, 'Failed to fetch created issue');
         }
       }
 
@@ -134,12 +134,12 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
             fs.unlinkSync(tempFile);
           }
         } catch (cleanupError) {
-          console.error('[API] Failed to cleanup temp file on error:', cleanupError);
+          logger.error({ err: cleanupError, tempFile }, 'Failed to cleanup temp file on error');
         }
       }
 
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[API] Error creating issue: ${errorMessage}`);
+      logger.error({ err: error }, 'Error creating issue');
       res.status(500).json({ error: errorMessage });
     }
   });
@@ -176,11 +176,11 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
           try {
             fs.unlinkSync(tempFile);
           } catch (cleanupError) {
-            console.error('Failed to cleanup temp file:', cleanupError);
+            logger.error({ err: cleanupError, tempFile }, 'Failed to cleanup temp file');
           }
 
           if (error) {
-            console.error(`exec error: ${error}`);
+            logger.error({ err: error, stderr }, 'bd update error');
             return reject(new Error(stderr || error.message));
           }
 
@@ -199,7 +199,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
           fs.unlinkSync(tempFile);
         }
       } catch (cleanupError) {
-        console.error('Failed to cleanup temp file on error:', cleanupError);
+        logger.error({ err: cleanupError, tempFile }, 'Failed to cleanup temp file on error');
       }
 
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -214,7 +214,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
   router.post('/issues/:id/status', async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    console.log(`[API] Updating issue ${id} to status: ${req.body.status}`);
+    logger.info({ issueId: id, status: req.body.status }, 'Updating issue status');
 
     // Validate input
     try {
@@ -232,17 +232,15 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       await new Promise<void>((resolve, reject) => {
         exec(`bd update ${id} --status=${status}`, { cwd: projectRoot }, (error, stdout, stderr) => {
           if (error) {
-            console.error(`[API] bd update error: ${error}`);
-            console.error(`[API] stderr: ${stderr}`);
+            logger.error({ err: error, stderr, issueId: id }, 'bd update status error');
             return reject(new Error(stderr || error.message));
           }
-          console.log(`[API] bd update stdout: ${stdout}`);
-          console.log(`[API] bd update stderr: ${stderr}`);
+          logger.debug({ stdout, stderr }, 'bd update status output');
           resolve();
         });
       });
 
-      console.log(`[API] Sending success response`);
+      logger.debug({ issueId: id }, 'Sending success response');
       res.json({ success: true });
 
       // Emit refresh so clients reload from database
@@ -251,7 +249,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       // and emit refresh automatically
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[API] Error updating status: ${errorMessage}`);
+      logger.error({ err: error, issueId: id }, 'Error updating status');
       res.status(500).json({ error: errorMessage });
     }
   });
@@ -263,29 +261,28 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
   router.post('/issues/:id/close', async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    console.log(`[API] Closing issue ${id}`);
+    logger.info({ issueId: id }, 'Closing issue');
 
     try {
       await new Promise<void>((resolve, reject) => {
         exec(`bd close ${id}`, { cwd: projectRoot }, (error, stdout, stderr) => {
           if (error) {
-            console.error(`[API] bd close error: ${error}`);
-            console.error(`[API] stderr: ${stderr}`);
+            logger.error({ err: error, stderr, issueId: id }, 'bd close error');
             return reject(new Error(stderr || error.message));
           }
-          console.log(`[API] bd close stdout: ${stdout}`);
+          logger.debug({ stdout }, 'bd close output');
           resolve();
         });
       });
 
-      console.log(`[API] Sending success response`);
+      logger.debug({ issueId: id }, 'Sending success response');
       res.json({ success: true });
 
       // Emit refresh so clients reload from database
       emitRefresh();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[API] Error closing issue: ${errorMessage}`);
+      logger.error({ err: error, issueId: id }, 'Error closing issue');
       res.status(500).json({ error: errorMessage });
     }
   });
@@ -313,7 +310,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       await new Promise<void>((resolve, reject) => {
         exec(`bd update ${id} --priority=${priority}`, { cwd: projectRoot }, (error, _stdout, stderr) => {
           if (error) {
-            console.error(`exec error: ${error}`);
+            logger.error({ err: error, stderr }, 'bd update error');
             return reject(new Error(stderr || error.message));
           }
           resolve();
@@ -392,15 +389,14 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
   router.get('/issues/:id/dependencies', async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    console.log(`[API] Fetching dependencies for issue ${id}`);
+    logger.info({ issueId: id }, 'Fetching dependencies for issue');
 
     try {
       // Fetch what this issue depends on (direction=down)
       const dependenciesOutput = await new Promise<string>((resolve, reject) => {
         exec(`bd dep list ${id} --direction=down --json`, { cwd: projectRoot }, (error, stdout, stderr) => {
           if (error) {
-            console.error(`[API] bd dep list error: ${error}`);
-            console.error(`[API] stderr: ${stderr}`);
+            logger.error({ err: error, stderr, issueId: id, direction: 'down' }, 'bd dep list error');
             return reject(new Error(stderr || error.message));
           }
           resolve(stdout);
@@ -411,8 +407,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       const dependentsOutput = await new Promise<string>((resolve, reject) => {
         exec(`bd dep list ${id} --direction=up --json`, { cwd: projectRoot }, (error, stdout, stderr) => {
           if (error) {
-            console.error(`[API] bd dep list error: ${error}`);
-            console.error(`[API] stderr: ${stderr}`);
+            logger.error({ err: error, stderr, issueId: id, direction: 'up' }, 'bd dep list error');
             return reject(new Error(stderr || error.message));
           }
           resolve(stdout);
@@ -422,7 +417,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       const dependencies = JSON.parse(dependenciesOutput || '[]');
       const dependents = JSON.parse(dependentsOutput || '[]');
 
-      console.log(`[API] Found ${dependencies.length} dependencies and ${dependents.length} dependents`);
+      logger.info({ issueId: id, dependenciesCount: dependencies.length, dependentsCount: dependents.length }, 'Found dependencies');
 
       res.json({
         dependencies,
@@ -430,7 +425,7 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[API] Error fetching dependencies: ${errorMessage}`);
+      logger.error({ err: error, issueId: id }, 'Error fetching dependencies');
       res.status(500).json({ error: errorMessage });
     }
   });
