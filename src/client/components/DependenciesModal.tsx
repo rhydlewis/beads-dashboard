@@ -125,13 +125,13 @@ export default function DependenciesModal({ issueId, issueTitle, onClose, onView
   return (
     <div
       className={`fixed inset-0 flex items-center p-4 animate-in fade-in duration-200 ${
-        sideBySideMode ? 'z-[70] justify-start bg-transparent' : 'z-50 justify-center bg-black/50'
+        sideBySideMode ? 'z-[70] justify-start bg-transparent pointer-events-none' : 'z-50 justify-center bg-black/50'
       }`}
       onClick={handleBackdropClick}
     >
       <div
         className={`bg-white dark:bg-slate-900 rounded-lg shadow-xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 ${
-          sideBySideMode ? 'w-full max-w-2xl ml-2' : 'w-full max-w-2xl'
+          sideBySideMode ? 'w-full max-w-2xl ml-2 pointer-events-auto' : 'w-full max-w-2xl'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
