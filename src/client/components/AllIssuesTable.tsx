@@ -100,7 +100,6 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
   const [showCreationModal, setShowCreationModal] = useState(false);
   const [dependenciesIssue, setDependenciesIssue] = useState<Issue | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; issue: Issue } | null>(null);
-  const [focusedRowIndex, setFocusedRowIndex] = useState<number>(-1);
   const tableBodyRef = useRef<HTMLTableSectionElement>(null);
 
   const [statusFilter, setStatusFilter] = useState<IssueStatus[]>(() => {
@@ -815,7 +814,6 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
                     tabIndex={0}
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset"
                     onContextMenu={(e) => handleContextMenu(e, issue)}
-                    onFocus={() => setFocusedRowIndex(index)}
                     onKeyDown={(e) => handleRowKeyDown(e, issue)}
                   >
                     <td className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" style={getColumnStyle('id')}>

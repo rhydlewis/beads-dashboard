@@ -85,7 +85,6 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [dependenciesIssue, setDependenciesIssue] = useState<Issue | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; issue: Issue } | null>(null);
-  const [focusedRowIndex, setFocusedRowIndex] = useState<number>(-1);
   const tableBodyRef = useRef<HTMLTableSectionElement>(null);
 
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() => {
@@ -552,7 +551,6 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                     tabIndex={0}
                     className="group hover:bg-slate-50 dark:hover:bg-slate-700 border-l-4 border-indigo-100/70 dark:border-indigo-800/70 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset"
                     onContextMenu={(e) => handleContextMenu(e, epic)}
-                    onFocus={() => setFocusedRowIndex(index)}
                     onKeyDown={(e) => handleRowKeyDown(e, epic)}
                   >
                     <td style={getColumnStyle('id')} className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
