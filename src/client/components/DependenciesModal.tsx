@@ -47,6 +47,8 @@ export default function DependenciesModal({ issueId, issueTitle, onClose, onView
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
+    // Don't close on backdrop click in side-by-side mode
+    if (sideBySideMode) return;
     if (e.target === e.currentTarget) {
       onClose();
     }
