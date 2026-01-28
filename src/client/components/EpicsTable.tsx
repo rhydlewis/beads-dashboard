@@ -85,6 +85,8 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [dependenciesIssue, setDependenciesIssue] = useState<Issue | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; issue: Issue } | null>(null);
+  const [focusedRowIndex, setFocusedRowIndex] = useState<number>(-1);
+  const tableBodyRef = useRef<HTMLTableSectionElement>(null);
 
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() => {
     const saved = localStorage.getItem('beads-epics-column-config');
@@ -373,6 +375,66 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
     return {};
   };
 
+  // Keyboard navigation handler (placed after sortedEpics computation)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if focus is on table or table row
+      const target = e.target as HTMLElement;
+      if (!target.closest('tbody') && focusedRowIndex === -1) return;
+
+      const rows = tableBodyRef.current?.querySelectorAll('tr') || [];
+      const maxIndex = rows.length - 1;
+
+      switch (e.key) {
+        case 'j': // Move down
+        case 'ArrowDown':
+          e.preventDefault();
+          if (focusedRowIndex < maxIndex) {
+            const newIndex = focusedRowIndex + 1;
+            setFocusedRowIndex(newIndex);
+            (rows[newIndex] as HTMLElement)?.focus();
+          }
+          break;
+
+        case 'k': // Move up
+        case 'ArrowUp':
+          e.preventDefault();
+          if (focusedRowIndex > 0) {
+            const newIndex = focusedRowIndex - 1;
+            setFocusedRowIndex(newIndex);
+            (rows[newIndex] as HTMLElement)?.focus();
+          }
+          break;
+
+        case 'Enter':
+          e.preventDefault();
+          if (focusedRowIndex >= 0 && focusedRowIndex <= maxIndex) {
+            // Simulate click on the row to open the modal
+            (rows[focusedRowIndex] as HTMLElement)?.click();
+          }
+          break;
+
+        case 'd':
+          e.preventDefault();
+          if (focusedRowIndex >= 0 && focusedRowIndex <= maxIndex) {
+            // Get the epic for this row and show dependencies
+            const rowElement = rows[focusedRowIndex] as HTMLElement;
+            const epicId = rowElement.getAttribute('data-issue-id');
+            if (epicId) {
+              const epic = sortedEpics.find(e => e.id === epicId);
+              if (epic) {
+                handleShowDependencies(epic);
+              }
+            }
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [focusedRowIndex, sortedEpics]);
+
   const visibleColumns = columnConfigs.filter(c => c.visible);
   const totalTableWidth = visibleColumns.reduce((sum, col) => sum + col.width, 0);
 
@@ -511,8 +573,8 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                 {visibleColumns.map(renderColumnHeader)}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {sortedEpics.map((epic) => {
+            <tbody ref={tableBodyRef} className="divide-y divide-slate-100 dark:divide-slate-700">
+              {sortedEpics.map((epic, index) => {
                 const childCounts = getChildCounts(epic.id);
                 const ageInDays = getAgeInDays(epic);
                 const isClosed = epic.status === 'closed';
@@ -538,9 +600,12 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                 return (
                   <tr
                     key={epic.id}
-                    className="group hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-l-4 border-indigo-100/70 dark:border-indigo-800/70"
+                    data-issue-id={epic.id}
+                    tabIndex={0}
+                    className="group hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-l-4 border-indigo-100/70 dark:border-indigo-800/70 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset"
                     onClick={() => openDescription(epic)}
                     onContextMenu={(e) => handleContextMenu(e, epic)}
+                    onFocus={() => setFocusedRowIndex(index)}
                   >
                     <td style={getColumnStyle('id')} className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       <div className="flex items-center gap-2">

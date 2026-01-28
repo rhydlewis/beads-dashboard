@@ -100,6 +100,8 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
   const [showCreationModal, setShowCreationModal] = useState(false);
   const [dependenciesIssue, setDependenciesIssue] = useState<Issue | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; issue: Issue } | null>(null);
+  const [focusedRowIndex, setFocusedRowIndex] = useState<number>(-1);
+  const tableBodyRef = useRef<HTMLTableSectionElement>(null);
 
   const [statusFilter, setStatusFilter] = useState<IssueStatus[]>(() => {
     const saved = localStorage.getItem('beads-filter-status');
@@ -413,6 +415,66 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
       setActiveDescription(issue);
     }
   };
+
+  // Keyboard navigation handler (placed after sortedIssues computation)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if focus is on table or table row
+      const target = e.target as HTMLElement;
+      if (!target.closest('tbody') && focusedRowIndex === -1) return;
+
+      const rows = tableBodyRef.current?.querySelectorAll('tr') || [];
+      const maxIndex = rows.length - 1;
+
+      switch (e.key) {
+        case 'j': // Move down
+        case 'ArrowDown':
+          e.preventDefault();
+          if (focusedRowIndex < maxIndex) {
+            const newIndex = focusedRowIndex + 1;
+            setFocusedRowIndex(newIndex);
+            (rows[newIndex] as HTMLElement)?.focus();
+          }
+          break;
+
+        case 'k': // Move up
+        case 'ArrowUp':
+          e.preventDefault();
+          if (focusedRowIndex > 0) {
+            const newIndex = focusedRowIndex - 1;
+            setFocusedRowIndex(newIndex);
+            (rows[newIndex] as HTMLElement)?.focus();
+          }
+          break;
+
+        case 'Enter':
+          e.preventDefault();
+          if (focusedRowIndex >= 0 && focusedRowIndex <= maxIndex) {
+            // Simulate click on the row to open the modal
+            (rows[focusedRowIndex] as HTMLElement)?.click();
+          }
+          break;
+
+        case 'd':
+          e.preventDefault();
+          if (focusedRowIndex >= 0 && focusedRowIndex <= maxIndex) {
+            // Get the issue for this row and show dependencies
+            const rowElement = rows[focusedRowIndex] as HTMLElement;
+            const issueId = rowElement.getAttribute('data-issue-id');
+            if (issueId) {
+              const issue = sortedIssues.find(i => i.id === issueId);
+              if (issue) {
+                handleShowDependencies(issue);
+              }
+            }
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [focusedRowIndex, sortedIssues]);
 
   const toggleFilterValue = (filterType: string, value: string | number) => {
     if (filterType === 'status') {
@@ -772,8 +834,8 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
                 {visibleColumns.map(renderColumnHeader)}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {sortedIssues.map((issue) => {
+            <tbody ref={tableBodyRef} className="divide-y divide-slate-100 dark:divide-slate-700">
+              {sortedIssues.map((issue, index) => {
                 const isClosed = issue.status === 'closed';
                 const ageInDays = getAgeInDays(issue);
                 const isStale = !isClosed && ageInDays > 30;
@@ -800,8 +862,12 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
                 return (
                   <tr
                     key={issue.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group"
+                    data-issue-id={issue.id}
+                    tabIndex={0}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset cursor-pointer"
                     onContextMenu={(e) => handleContextMenu(e, issue)}
+                    onFocus={() => setFocusedRowIndex(index)}
+                    onClick={() => openDescription(issue)}
                   >
                     <td className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" style={getColumnStyle('id')}>
                       <div className="flex items-center gap-2">
