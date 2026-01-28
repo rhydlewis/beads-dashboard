@@ -783,7 +783,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
               </tr>
             </thead>
             <tbody ref={tableBodyRef} className="divide-y divide-slate-100 dark:divide-slate-700">
-              {sortedIssues.map((issue, index) => {
+              {sortedIssues.map((issue, _index) => {
                 const isClosed = issue.status === 'closed';
                 const ageInDays = getAgeInDays(issue);
                 const isStale = !isClosed && ageInDays > 30;

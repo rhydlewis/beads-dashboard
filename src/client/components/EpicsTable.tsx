@@ -521,7 +521,7 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
               </tr>
             </thead>
             <tbody ref={tableBodyRef} className="divide-y divide-slate-100 dark:divide-slate-700">
-              {sortedEpics.map((epic, index) => {
+              {sortedEpics.map((epic, _index) => {
                 const childCounts = getChildCounts(epic.id);
                 const ageInDays = getAgeInDays(epic);
                 const isClosed = epic.status === 'closed';
