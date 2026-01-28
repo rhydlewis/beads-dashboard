@@ -122,8 +122,8 @@ export default function DependenciesModal({ issueId, issueTitle, onClose, onView
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center p-4 animate-in fade-in duration-200 ${
-        sideBySideMode ? 'justify-start bg-transparent' : 'justify-center bg-black/50'
+      className={`fixed inset-0 flex items-center p-4 animate-in fade-in duration-200 ${
+        sideBySideMode ? 'z-[70] justify-start bg-transparent' : 'z-50 justify-center bg-black/50'
       }`}
       onClick={handleBackdropClick}
     >
