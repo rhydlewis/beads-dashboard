@@ -70,16 +70,30 @@ if (beadsDirectoryExists(projectRoot)) {
   console.log(`Setting up file watcher for: ${beadsDbPath}`);
   const watcher = chokidar.watch(beadsDbPath, {
     persistent: true,
-    ignoreInitial: false,
+    ignoreInitial: true, // Don't trigger on startup - only on actual changes
+    awaitWriteFinish: {
+      stabilityThreshold: 200, // Wait for 200ms of no changes before emitting
+      pollInterval: 100, // Check every 100ms
+    },
   });
 
   watcher.on('ready', () => {
     console.log('File watcher ready');
   });
 
-  watcher.on('all', () => {
-    // Database changed - this catches manual bd CLI updates outside the dashboard
-    io.emit('refresh');
+  // Use 'change' event to catch database updates
+  // Long debounce (10s) to batch rapid daemon writes while still catching external CLI changes
+  // Note: bd daemon in events mode continuously imports/exports, causing frequent db writes
+  let refreshTimeout: NodeJS.Timeout | null = null;
+  watcher.on('change', () => {
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+    }
+    refreshTimeout = setTimeout(() => {
+      console.log('Database changed - emitting refresh');
+      io.emit('refresh');
+      refreshTimeout = null;
+    }, 10000); // 10 second debounce to batch daemon activity
   });
 
   watcher.on('error', (error) => {
