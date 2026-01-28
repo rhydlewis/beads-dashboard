@@ -375,65 +375,13 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
     return {};
   };
 
-  // Keyboard navigation handler (placed after sortedEpics computation)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle if focus is on table or table row
-      const target = e.target as HTMLElement;
-      if (!target.closest('tbody') && focusedRowIndex === -1) return;
-
-      const rows = tableBodyRef.current?.querySelectorAll('tr') || [];
-      const maxIndex = rows.length - 1;
-
-      switch (e.key) {
-        case 'j': // Move down
-        case 'ArrowDown':
-          e.preventDefault();
-          if (focusedRowIndex < maxIndex) {
-            const newIndex = focusedRowIndex + 1;
-            setFocusedRowIndex(newIndex);
-            (rows[newIndex] as HTMLElement)?.focus();
-          }
-          break;
-
-        case 'k': // Move up
-        case 'ArrowUp':
-          e.preventDefault();
-          if (focusedRowIndex > 0) {
-            const newIndex = focusedRowIndex - 1;
-            setFocusedRowIndex(newIndex);
-            (rows[newIndex] as HTMLElement)?.focus();
-          }
-          break;
-
-        case 'Enter':
-          e.preventDefault();
-          if (focusedRowIndex >= 0 && focusedRowIndex <= maxIndex) {
-            // Simulate click on the row to open the modal
-            (rows[focusedRowIndex] as HTMLElement)?.click();
-          }
-          break;
-
-        case 'd':
-          e.preventDefault();
-          if (focusedRowIndex >= 0 && focusedRowIndex <= maxIndex) {
-            // Get the epic for this row and show dependencies
-            const rowElement = rows[focusedRowIndex] as HTMLElement;
-            const epicId = rowElement.getAttribute('data-issue-id');
-            if (epicId) {
-              const epic = sortedEpics.find(e => e.id === epicId);
-              if (epic) {
-                handleShowDependencies(epic);
-              }
-            }
-          }
-          break;
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [focusedRowIndex, sortedEpics]);
+  // Keyboard handler for table rows (only 'd' shortcut)
+  const handleRowKeyDown = (e: React.KeyboardEvent, epic: Issue) => {
+    if (e.key === 'd') {
+      e.preventDefault();
+      handleShowDependencies(epic);
+    }
+  };
 
   const visibleColumns = columnConfigs.filter(c => c.visible);
   const totalTableWidth = visibleColumns.reduce((sum, col) => sum + col.width, 0);
@@ -602,10 +550,10 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                     key={epic.id}
                     data-issue-id={epic.id}
                     tabIndex={0}
-                    className="group hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer border-l-4 border-indigo-100/70 dark:border-indigo-800/70 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset"
-                    onClick={() => openDescription(epic)}
+                    className="group hover:bg-slate-50 dark:hover:bg-slate-700 border-l-4 border-indigo-100/70 dark:border-indigo-800/70 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset"
                     onContextMenu={(e) => handleContextMenu(e, epic)}
                     onFocus={() => setFocusedRowIndex(index)}
+                    onKeyDown={(e) => handleRowKeyDown(e, epic)}
                   >
                     <td style={getColumnStyle('id')} className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       <div className="flex items-center gap-2">
@@ -775,6 +723,7 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
           }}
           timeDisplayMode={timeDisplayMode}
           onShowDependencies={handleShowDependencies}
+          sideBySideMode={!!dependenciesIssue}
         />
       )}
 
@@ -799,6 +748,7 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
           issueTitle={dependenciesIssue.title}
           onClose={() => setDependenciesIssue(null)}
           onViewIssue={handleViewIssueFromDependencies}
+          sideBySideMode={!!activeDescription}
         />
       )}
     </>

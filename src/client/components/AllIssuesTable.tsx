@@ -412,69 +412,18 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
   const handleViewIssueFromDependencies = (issueId: string) => {
     const issue = issues.find(i => i.id === issueId);
     if (issue) {
+      // Keep dependencies modal open, just open issue modal alongside
       setActiveDescription(issue);
     }
   };
 
-  // Keyboard navigation handler (placed after sortedIssues computation)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle if focus is on table or table row
-      const target = e.target as HTMLElement;
-      if (!target.closest('tbody') && focusedRowIndex === -1) return;
-
-      const rows = tableBodyRef.current?.querySelectorAll('tr') || [];
-      const maxIndex = rows.length - 1;
-
-      switch (e.key) {
-        case 'j': // Move down
-        case 'ArrowDown':
-          e.preventDefault();
-          if (focusedRowIndex < maxIndex) {
-            const newIndex = focusedRowIndex + 1;
-            setFocusedRowIndex(newIndex);
-            (rows[newIndex] as HTMLElement)?.focus();
-          }
-          break;
-
-        case 'k': // Move up
-        case 'ArrowUp':
-          e.preventDefault();
-          if (focusedRowIndex > 0) {
-            const newIndex = focusedRowIndex - 1;
-            setFocusedRowIndex(newIndex);
-            (rows[newIndex] as HTMLElement)?.focus();
-          }
-          break;
-
-        case 'Enter':
-          e.preventDefault();
-          if (focusedRowIndex >= 0 && focusedRowIndex <= maxIndex) {
-            // Simulate click on the row to open the modal
-            (rows[focusedRowIndex] as HTMLElement)?.click();
-          }
-          break;
-
-        case 'd':
-          e.preventDefault();
-          if (focusedRowIndex >= 0 && focusedRowIndex <= maxIndex) {
-            // Get the issue for this row and show dependencies
-            const rowElement = rows[focusedRowIndex] as HTMLElement;
-            const issueId = rowElement.getAttribute('data-issue-id');
-            if (issueId) {
-              const issue = sortedIssues.find(i => i.id === issueId);
-              if (issue) {
-                handleShowDependencies(issue);
-              }
-            }
-          }
-          break;
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [focusedRowIndex, sortedIssues]);
+  // Keyboard handler for table rows (only 'd' shortcut)
+  const handleRowKeyDown = (e: React.KeyboardEvent, issue: Issue) => {
+    if (e.key === 'd') {
+      e.preventDefault();
+      handleShowDependencies(issue);
+    }
+  };
 
   const toggleFilterValue = (filterType: string, value: string | number) => {
     if (filterType === 'status') {
@@ -864,16 +813,19 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
                     key={issue.id}
                     data-issue-id={issue.id}
                     tabIndex={0}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset cursor-pointer"
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset"
                     onContextMenu={(e) => handleContextMenu(e, issue)}
                     onFocus={() => setFocusedRowIndex(index)}
-                    onClick={() => openDescription(issue)}
+                    onKeyDown={(e) => handleRowKeyDown(e, issue)}
                   >
                     <td className="px-6 py-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" style={getColumnStyle('id')}>
                       <div className="flex items-center gap-2">
                         <span>{shortId}</span>
                         <button
-                          onClick={() => handleCopy(issue.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(issue.id);
+                          }}
                           className="text-slate-300 hover:text-slate-600 dark:text-slate-600 dark:hover:text-slate-300 transition-colors opacity-0 group-hover:opacity-100"
                           title="Copy full ID"
                         >
@@ -885,7 +837,10 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
                       <div className="flex items-center gap-2">
                         <span>{issue.title || 'Untitled'}</span>
                         <button
-                          onClick={() => openDescription(issue)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDescription(issue);
+                          }}
                           className="ml-auto text-slate-300 hover:text-blue-600 dark:text-slate-600 dark:hover:text-blue-400 transition-colors"
                           title="View Description"
                         >
@@ -1041,6 +996,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
           }}
           timeDisplayMode={timeDisplayMode}
           onShowDependencies={handleShowDependencies}
+          sideBySideMode={!!dependenciesIssue}
         />
       )}
 
@@ -1072,6 +1028,7 @@ function AllIssuesTable({ issues, focusedEpicId, onClearFocusedEpic, timeDisplay
           issueTitle={dependenciesIssue.title}
           onClose={() => setDependenciesIssue(null)}
           onViewIssue={handleViewIssueFromDependencies}
+          sideBySideMode={!!activeDescription}
         />
       )}
     </>

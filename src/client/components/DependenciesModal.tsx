@@ -7,9 +7,10 @@ interface DependenciesModalProps {
   issueTitle: string;
   onClose: () => void;
   onViewIssue: (issueId: string) => void;
+  sideBySideMode?: boolean; // Whether to position for side-by-side with issue modal
 }
 
-export default function DependenciesModal({ issueId, issueTitle, onClose, onViewIssue }: DependenciesModalProps) {
+export default function DependenciesModal({ issueId, issueTitle, onClose, onViewIssue, sideBySideMode = false }: DependenciesModalProps) {
   const [data, setData] = useState<DependenciesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,11 +122,15 @@ export default function DependenciesModal({ issueId, issueTitle, onClose, onView
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200"
+      className={`fixed inset-0 z-50 flex items-center p-4 animate-in fade-in duration-200 ${
+        sideBySideMode ? 'justify-start bg-transparent' : 'justify-center bg-black/50'
+      }`}
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200"
+        className={`bg-white dark:bg-slate-900 rounded-lg shadow-xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 ${
+          sideBySideMode ? 'w-full max-w-2xl ml-2' : 'w-full max-w-2xl'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -179,18 +184,18 @@ export default function DependenciesModal({ issueId, issueTitle, onClose, onView
                 {renderDependencyList(data.dependencies, 'Dependencies')}
               </div>
 
-              {/* Blocks Section */}
+              {/* Related Issues Section */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <GitMerge className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                   <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                    Blocks
+                    Related Issues
                   </h3>
                   <span className="text-xs text-slate-500 dark:text-slate-400">
                     ({data.dependents.length})
                   </span>
                 </div>
-                {renderDependencyList(data.dependents, 'Dependents')}
+                {renderDependencyList(data.dependents, 'Related Issues')}
               </div>
 
               {/* Empty state */}

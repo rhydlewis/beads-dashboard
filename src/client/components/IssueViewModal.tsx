@@ -11,11 +11,12 @@ interface IssueViewModalProps {
   onUpdate: () => void; // Trigger data refresh
   timeDisplayMode?: TimeDisplayMode;
   onShowDependencies?: (issue: Issue) => void; // Optional handler to show dependencies
+  sideBySideMode?: boolean; // Whether to position for side-by-side with dependencies modal
 }
 
 type Tab = 'description' | 'design' | 'acceptance';
 
-export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMode = 'day', onShowDependencies }: IssueViewModalProps) {
+export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMode = 'day', onShowDependencies, sideBySideMode = false }: IssueViewModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>('description');
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
@@ -155,9 +156,16 @@ export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMo
   }, [hasUnsavedChanges]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200" onClick={handleClose}>
+    <div
+      className={`fixed inset-0 flex items-center p-4 animate-in fade-in duration-200 ${
+        sideBySideMode ? 'z-[60] justify-end bg-transparent' : 'z-50 justify-center bg-black/50'
+      }`}
+      onClick={handleClose}
+    >
       <div
-        className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200"
+        className={`bg-white dark:bg-slate-900 rounded-lg shadow-xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 ${
+          sideBySideMode ? 'w-full max-w-2xl mr-2' : 'w-full max-w-3xl'
+        }`}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
