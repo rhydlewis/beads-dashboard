@@ -49,14 +49,20 @@ npm start
 # Install globally
 npm install -g beads-dashboard
 
-# Run from any directory
+# Run from any directory (both commands work identically)
 beads-dashboard
+# or use the shorter alias
+bd-dash
 
 # Run against a specific project
 beads-dashboard /path/to/project
+# or
+bd-dash /path/to/project
 
 # Use custom port (default: 3001 in dev, 3001 in prod)
 beads-dashboard --port=8080
+# or
+bd-dash --port=8080
 ```
 
 ## Architecture
@@ -363,7 +369,11 @@ npm link  # For local development
 npm install -g beads-dashboard  # For end users
 ```
 
-The `bin/beads-dashboard.js` wrapper:
+The dashboard provides two command aliases:
+- `beads-dashboard` - Full command name
+- `bd-dash` - Shorter alias
+
+Both commands point to `bin/beads-dashboard.js` which:
 - Points to `server.js` (for backward compatibility)
 - Server auto-detects production mode
 - Serves pre-built files from `dist/`

@@ -11,7 +11,8 @@
     "LICENSE"
   ],
   "bin": {
-    "beads-dashboard": "bin/beads-dashboard.js"
+    "beads-dashboard": "bin/beads-dashboard.js",
+    "bd-dash": "bin/beads-dashboard.js"
   },
   "scripts": {
     "dev": "concurrently \"vite\" \"npm run dev:server\"",
