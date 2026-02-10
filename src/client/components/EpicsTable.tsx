@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertOctagon,
+  AlertTriangle,
+  AlertCircle,
   ArrowDown,
+  ArrowDownFromLine,
   ArrowUp,
   ArrowUpDown,
   Boxes,
   Bug,
   Box,
+  ChevronUp,
   ListCheck,
   FilterX,
   PanelTopOpen,
@@ -83,6 +88,7 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
   }));
   const [activeDescription, setActiveDescription] = useState<Issue | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [updatingPriority, setUpdatingPriority] = useState<string | null>(null);
   const [dependenciesIssue, setDependenciesIssue] = useState<Issue | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; issue: Issue } | null>(null);
   const tableBodyRef = useRef<HTMLTableSectionElement>(null);
@@ -366,6 +372,43 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
     }
   };
 
+  const handlePriorityUpdate = async (issueId: string, newPriority: Priority) => {
+    setUpdatingPriority(issueId);
+    try {
+      const res = await fetch(`/api/issues/${issueId}/priority`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority: newPriority }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update priority');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to update priority: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setUpdatingPriority(null);
+    }
+  };
+
+  const getPriorityIcon = (priority: Priority) => {
+    switch (priority) {
+      case 0:
+        return <AlertOctagon className="w-3.5 h-3.5" />;
+      case 1:
+        return <AlertTriangle className="w-3.5 h-3.5" />;
+      case 2:
+        return <ArrowUp className="w-3.5 h-3.5" />;
+      case 3:
+        return <ArrowDown className="w-3.5 h-3.5" />;
+      case 4:
+        return <ArrowDownFromLine className="w-3.5 h-3.5" />;
+      default:
+        return <AlertCircle className="w-3.5 h-3.5" />;
+    }
+  };
+
   const getColumnStyle = (columnKey: EpicSortColumn): React.CSSProperties => {
     const column = columnConfigs.find(c => c.key === columnKey);
     if (!column || !column.visible) {
@@ -634,9 +677,46 @@ function EpicsTable({ issues, onSelectChildren, timeDisplayMode = 'day' }: Epics
                       </span>
                     </td>
                     <td style={getColumnStyle('priority')} className="px-6 py-3">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300">
-                        {PRIORITY_LABELS[epic.priority]}
-                      </span>
+                      <div
+                        className="flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 -ml-1"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            if (epic.priority > 0 && updatingPriority !== epic.id) {
+                              handlePriorityUpdate(epic.id, (epic.priority - 1) as Priority);
+                            }
+                          } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            if (epic.priority < 4 && updatingPriority !== epic.id) {
+                              handlePriorityUpdate(epic.id, (epic.priority + 1) as Priority);
+                            }
+                          }
+                        }}
+                      >
+                        <button
+                          onClick={() => handlePriorityUpdate(epic.id, (epic.priority - 1) as Priority)}
+                          disabled={epic.priority === 0 || updatingPriority === epic.id}
+                          className="text-slate-300 hover:text-blue-600 disabled:text-slate-200 disabled:cursor-not-allowed dark:text-slate-600 dark:hover:text-blue-400 dark:disabled:text-slate-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5"
+                          title="Increase Priority (Up Arrow)"
+                          tabIndex={-1}
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-white dark:bg-slate-800 border ${epic.priority <= 1 ? 'border-red-200 dark:border-red-800' : 'border-slate-200 dark:border-slate-600'} dark:text-slate-200`}>
+                          {getPriorityIcon(epic.priority)}
+                          {PRIORITY_LABELS[epic.priority]}
+                        </span>
+                        <button
+                          onClick={() => handlePriorityUpdate(epic.id, (epic.priority + 1) as Priority)}
+                          disabled={epic.priority === 4 || updatingPriority === epic.id}
+                          className="text-slate-300 hover:text-blue-600 disabled:text-slate-200 disabled:cursor-not-allowed dark:text-slate-600 dark:hover:text-blue-400 dark:disabled:text-slate-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5"
+                          title="Decrease Priority (Down Arrow)"
+                          tabIndex={-1}
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                     <td style={getColumnStyle('assignee')} className="px-6 py-3 text-slate-600 dark:text-slate-400">
                       {epic.assignee || '—'}

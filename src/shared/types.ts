@@ -147,6 +147,10 @@ export interface UpdateIssuePriorityRequest {
   priority: Priority;
 }
 
+export interface UpdateIssueTitleRequest {
+  title: string;
+}
+
 export interface CreateIssueRequest {
   title: string;
   type: IssueType;
@@ -191,6 +195,10 @@ export const UpdateIssueStatusSchema = z.object({
 
 export const UpdateIssuePrioritySchema = z.object({
   priority: z.number().int().min(0).max(4, 'Priority must be between 0 and 4'),
+});
+
+export const UpdateIssueTitleSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(MAX_TEXT_LENGTH, 'Title must be less than 100KB'),
 });
 
 export const CreateIssueSchema = z.object({

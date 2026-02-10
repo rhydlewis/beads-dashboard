@@ -10,6 +10,7 @@ import type {
   UpdateIssueDescriptionRequest,
   UpdateIssueStatusRequest,
   UpdateIssuePriorityRequest,
+  UpdateIssueTitleRequest,
   UpdateIssueDesignRequest,
   UpdateIssueAcceptanceRequest,
   CreateIssueRequest,
@@ -19,6 +20,7 @@ import {
   UpdateIssueDescriptionSchema,
   UpdateIssueStatusSchema,
   UpdateIssuePrioritySchema,
+  UpdateIssueTitleSchema,
   UpdateIssueDesignSchema,
   UpdateIssueAcceptanceSchema,
   CreateIssueSchema,
@@ -323,6 +325,63 @@ export function createApiRouter(projectRoot: string, emitRefresh: () => void) {
       emitRefresh();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  /**
+   * POST /api/issues/:id/title
+   * Updates issue title via bd update command
+   */
+  router.post('/issues/:id/title', async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const issueId = String(id);
+
+    logger.info({ issueId, title: req.body.title }, 'Updating issue title');
+
+    // Validate input
+    try {
+      UpdateIssueTitleSchema.parse(req.body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.issues[0].message });
+      }
+      return res.status(400).json({ error: 'Invalid request body' });
+    }
+
+    const { title } = req.body as UpdateIssueTitleRequest;
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const child = spawn('bd', ['update', issueId, '--title', title], { cwd: projectRoot });
+
+        let stderr = '';
+        if (child.stderr) {
+          child.stderr.on('data', (data: any) => {
+            stderr += data.toString();
+          });
+        }
+
+        child.on('close', (code: number | null) => {
+          if (code !== 0) {
+            reject(new Error(stderr || `Process exited with code ${code}`));
+          } else {
+            resolve();
+          }
+        });
+
+        child.on('error', (err: Error) => {
+            reject(err);
+        });
+      });
+
+      res.json({ success: true });
+
+      // Emit refresh so clients reload from database
+      emitRefresh();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error({ err: error, issueId }, 'Error updating title');
       res.status(500).json({ error: errorMessage });
     }
   });

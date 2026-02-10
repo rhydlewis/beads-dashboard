@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { X, Edit2, FileText, Palette, CheckSquare, GitBranch } from 'lucide-react';
+import { X, Edit2, FileText, Palette, CheckSquare, GitBranch, Copy, Check } from 'lucide-react';
 import type { Issue } from '@shared/types';
 import { formatTimestamp, type TimeDisplayMode } from '@/utils/timeFormatting';
 
@@ -27,6 +27,15 @@ export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMo
 
   // Track optimistic updates (saved values that haven't been confirmed by server yet)
   const [optimisticValues, setOptimisticValues] = useState<Partial<Record<Tab, string>>>({});
+
+  // Track ID copy status
+  const [copied, setCopied] = useState(false);
+
+  // Title editing state
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState(issue.title);
+  const [savingTitle, setSavingTitle] = useState(false);
+  const [optimisticTitle, setOptimisticTitle] = useState<string | null>(null);
 
   // Update optimistic values when the real issue data changes and matches
   useEffect(() => {
@@ -163,6 +172,59 @@ export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMo
     return () => window.removeEventListener('keydown', handleEsc);
   }, [hasUnsavedChanges]);
 
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(issue.id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveTitle = async () => {
+    if (!titleValue.trim() || titleValue === issue.title) {
+      setIsEditingTitle(false);
+      setTitleValue(issue.title);
+      return;
+    }
+
+    setSavingTitle(true);
+    setOptimisticTitle(titleValue);
+    setIsEditingTitle(false);
+
+    try {
+      const res = await fetch(`/api/issues/${issue.id}/title`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: titleValue }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update title');
+
+      onUpdate();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save title');
+      setOptimisticTitle(null);
+      setTitleValue(issue.title);
+    } finally {
+      setSavingTitle(false);
+    }
+  };
+
+  const handleCancelTitleEdit = () => {
+    setIsEditingTitle(false);
+    setTitleValue(optimisticTitle ?? issue.title);
+  };
+
+  // Clear optimistic title when real data arrives
+  useEffect(() => {
+    if (optimisticTitle !== null && issue.title === optimisticTitle) {
+      setOptimisticTitle(null);
+    }
+    // Update titleValue when issue changes (but not if we're editing)
+    if (!isEditingTitle) {
+      setTitleValue(optimisticTitle ?? issue.title);
+    }
+  }, [issue.title, optimisticTitle, isEditingTitle]);
+
   return (
     <div
       className={`fixed inset-0 flex items-center p-4 animate-in fade-in duration-200 ${
@@ -178,9 +240,69 @@ export default function IssueViewModal({ issue, onClose, onUpdate, timeDisplayMo
       >
         {/* Header */}
         <div className="flex justify-between items-start p-6 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">{issue.title}</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-1">{issue.id}</p>
+          <div className="flex-1 min-w-0 mr-4">
+            {isEditingTitle ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  className="flex-1 text-xl font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-blue-500 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={titleValue}
+                  onChange={(e) => setTitleValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSaveTitle();
+                    } else if (e.key === 'Escape') {
+                      handleCancelTitleEdit();
+                    }
+                  }}
+                  autoFocus
+                  disabled={savingTitle}
+                />
+                <button
+                  onClick={handleSaveTitle}
+                  disabled={savingTitle || !titleValue.trim()}
+                  className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors disabled:opacity-50"
+                  title="Save (Enter)"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleCancelTitleEdit}
+                  disabled={savingTitle}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 rounded transition-colors"
+                  title="Cancel (Escape)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="group flex items-center gap-2">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 truncate">
+                  {optimisticTitle ?? issue.title}
+                </h3>
+                <button
+                  onClick={() => setIsEditingTitle(true)}
+                  className="p-1 text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Edit title"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-mono">{issue.id}</p>
+              <button
+                onClick={handleCopyId}
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors p-1"
+                title="Copy issue ID"
+              >
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-green-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
             <div className="flex gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
               <span>Created: {formatTimestamp(issue.created_at, timeDisplayMode)}</span>
               <span>Updated: {formatTimestamp(issue.updated_at, timeDisplayMode)}</span>
