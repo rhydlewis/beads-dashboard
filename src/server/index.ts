@@ -91,7 +91,6 @@ if (beadsDirectoryExists(projectRoot)) {
       clearTimeout(refreshTimeout);
     }
     refreshTimeout = setTimeout(() => {
-      logger.info({ event: 'refresh' }, 'Database changed - emitting refresh to clients');
       io.emit('refresh');
       refreshTimeout = null;
     }, 10000); // 10 second debounce to batch daemon activity
