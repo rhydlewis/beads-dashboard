@@ -12,6 +12,7 @@ import EpicsTable from '@/components/EpicsTable';
 import { AgingAlertBadge } from '@/components/AgingAlertBadge';
 import { AgingAlertList } from '@/components/AgingAlertList';
 import KanbanBoard from '@/components/KanbanBoard';
+import HistoryView from '@/components/HistoryView';
 import { AgingThresholdConfig } from '@/components/AgingThresholdConfig';
 import { AgingThresholdConfig as AgingThresholdConfigType, loadThresholdConfig } from '@/utils/agingAlerts';
 import IssueCreationModal from '@/components/IssueCreationModal';
@@ -20,11 +21,11 @@ function App() {
   const [parsedIssues, setParsedIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'issues' | 'epics' | 'board' | 'dashboard' | 'aging'>(() => {
+  const [activeTab, setActiveTab] = useState<'issues' | 'epics' | 'board' | 'dashboard' | 'aging' | 'history'>(() => {
     const saved = localStorage.getItem('beads-active-tab');
     // Migrate old 'table' value to 'issues'
     if (saved === 'table') return 'issues';
-    return (saved as 'issues' | 'epics' | 'board' | 'dashboard' | 'aging') || 'issues';
+    return (saved as 'issues' | 'epics' | 'board' | 'dashboard' | 'aging' | 'history') || 'issues';
   });
   const [focusedEpicId, setFocusedEpicId] = useState<string | null>(null);
   const [granularity, setGranularity] = useState<TimeGranularity>(() => {
@@ -248,6 +249,16 @@ function App() {
           >
             Aging Items
           </button>
+          <button
+            className={`pb-2 px-1 text-sm font-medium flex items-center gap-1 ${
+              activeTab === 'history'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+            onClick={() => setActiveTab('history')}
+          >
+            History
+          </button>
         </div>
       </header>
 
@@ -281,11 +292,16 @@ function App() {
           onGranularityChange={setGranularity}
           timeDisplayMode={timeDisplayMode}
         />
-      ) : (
+      ) : activeTab === 'aging' ? (
         <AgingAlertList
           issues={parsedIssues}
           onConfigureClick={() => setShowConfigModal(true)}
           thresholdConfig={thresholdConfig}
+          timeDisplayMode={timeDisplayMode}
+        />
+      ) : (
+        <HistoryView
+          issues={parsedIssues}
           timeDisplayMode={timeDisplayMode}
         />
       )}
