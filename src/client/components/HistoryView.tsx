@@ -35,15 +35,10 @@ const TYPE_COLORS: Record<IssueType, string> = {
   epic: 'text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
 };
 
-function getTestHint(issue: Issue): string {
+function getTestHint(issue: Issue): string | null {
   if (issue.acceptance_criteria) return issue.acceptance_criteria;
   if (issue.design) return issue.design;
-  switch (issue.issue_type) {
-    case 'bug': return 'Verify the bug no longer reproduces';
-    case 'feature': return 'Verify the feature works as described';
-    case 'epic': return 'Verify all child items are complete';
-    default: return 'Verify the task deliverables are complete';
-  }
+  return null;
 }
 
 function truncate(text: string, maxLen: number): string {
@@ -195,7 +190,7 @@ function HistoryView({ issues, timeDisplayMode }: HistoryViewProps) {
                         </span>
                         <span className="font-mono text-xs text-slate-400 dark:text-slate-500">{shortId}</span>
                       </div>
-                      {!isExpanded && (
+                      {!isExpanded && (issue.description || testHint) && (
                         <div className="mt-1 space-y-0.5">
                           {issue.description && (
                             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -203,10 +198,12 @@ function HistoryView({ issues, timeDisplayMode }: HistoryViewProps) {
                               {truncate(issue.description, 150)}
                             </p>
                           )}
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            <span className="font-medium text-slate-400 dark:text-slate-500">Test: </span>
-                            {truncate(testHint, 150)}
-                          </p>
+                          {testHint && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              <span className="font-medium text-slate-400 dark:text-slate-500">Test: </span>
+                              {truncate(testHint, 150)}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -235,12 +232,6 @@ function HistoryView({ issues, timeDisplayMode }: HistoryViewProps) {
                         <div>
                           <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Design</h4>
                           <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{issue.design}</p>
-                        </div>
-                      )}
-                      {!issue.acceptance_criteria && !issue.design && (
-                        <div className="pt-3">
-                          <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Test Hint</h4>
-                          <p className="text-sm text-slate-500 dark:text-slate-400 italic">{testHint}</p>
                         </div>
                       )}
                     </div>
