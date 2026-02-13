@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { ChevronRight, ChevronDown, Bug, Box, Boxes, ListCheck, Inbox } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { ChevronRight, ChevronDown, Bug, Box, Boxes, ListCheck, Inbox, ClipboardCopy, Check } from 'lucide-react';
 import type { Issue, IssueType } from '@shared/types';
 import type { TimeDisplayMode } from '@/utils/timeFormatting';
 import { formatTimestamp, formatCycleTime } from '@/utils/timeFormatting';
@@ -46,11 +46,49 @@ function truncate(text: string, maxLen: number): string {
   return text.slice(0, maxLen).trimEnd() + '...';
 }
 
+function generateMarkdown(
+  groupedIssues: Map<IssueType, Issue[]>,
+  rangeLabel: string,
+  timeDisplayMode: TimeDisplayMode,
+  totalCount: number,
+): string {
+  const lines: string[] = [];
+  lines.push(`# History Report — ${rangeLabel}`);
+  lines.push('');
+  lines.push(`${totalCount} item${totalCount !== 1 ? 's' : ''} closed.`);
+  lines.push('');
+
+  for (const [type, typeIssues] of groupedIssues.entries()) {
+    lines.push(`## ${TYPE_LABELS[type]} (${typeIssues.length})`);
+    lines.push('');
+    for (const issue of typeIssues) {
+      const shortId = extractShortId(issue.id);
+      const closedDisplay = formatTimestamp(issue.closed_at, timeDisplayMode);
+      const cycleTime = formatCycleTime(issue.created_at, issue.closed_at, timeDisplayMode);
+      lines.push(`### ${issue.title} \`${shortId}\``);
+      lines.push(`Closed ${closedDisplay} · ${cycleTime} cycle time`);
+      lines.push('');
+      if (issue.description) {
+        lines.push(`**Why:** ${issue.description}`);
+        lines.push('');
+      }
+      const testHint = getTestHint(issue);
+      if (testHint) {
+        lines.push(`**Test:** ${testHint}`);
+        lines.push('');
+      }
+    }
+  }
+
+  return lines.join('\n').trimEnd() + '\n';
+}
+
 function HistoryView({ issues, timeDisplayMode }: HistoryViewProps) {
   const [rangeMode, setRangeMode] = useState<RangeMode>(30);
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [copied, setCopied] = useState(false);
 
   const { rangeStart, rangeEnd } = useMemo(() => {
     const now = new Date();
@@ -103,6 +141,13 @@ function HistoryView({ issues, timeDisplayMode }: HistoryViewProps) {
     ? (customStart || customEnd ? `${customStart || '...'} to ${customEnd || '...'}` : 'custom range')
     : `last ${rangeMode} days`;
 
+  const handleCopyMarkdown = useCallback(async () => {
+    const md = generateMarkdown(groupedIssues, rangeLabel, timeDisplayMode, filteredIssues.length);
+    await navigator.clipboard.writeText(md);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [groupedIssues, rangeLabel, timeDisplayMode, filteredIssues.length]);
+
   const presetButtonClass = (mode: RangeMode) =>
     `px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
       rangeMode === mode
@@ -126,6 +171,22 @@ function HistoryView({ issues, timeDisplayMode }: HistoryViewProps) {
           <button className={presetButtonClass(30)} onClick={() => setRangeMode(30)}>30 days</button>
           <button className={presetButtonClass(90)} onClick={() => setRangeMode(90)}>90 days</button>
           <button className={presetButtonClass('custom')} onClick={() => setRangeMode('custom')}>Custom</button>
+          <div className="w-px h-5 bg-slate-200 dark:bg-slate-700" />
+          <button
+            onClick={handleCopyMarkdown}
+            disabled={filteredIssues.length === 0}
+            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
+              filteredIssues.length === 0
+                ? 'opacity-40 cursor-not-allowed bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-600'
+                : copied
+                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600'
+            }`}
+            title={filteredIssues.length === 0 ? 'No items to copy' : 'Copy report as Markdown'}
+          >
+            {copied ? <Check className="w-4 h-4" /> : <ClipboardCopy className="w-4 h-4" />}
+            {copied ? 'Copied!' : 'Copy as Markdown'}
+          </button>
         </div>
       </div>
 
